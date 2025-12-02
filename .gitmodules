@@ -1,0 +1,3 @@
+[submodule "EGSTalker_Model/EGSTalker"]
+	path = EGSTalker_Model/EGSTalker
+	url = https://github.com/ZhuTianheng/EGSTalker.git
