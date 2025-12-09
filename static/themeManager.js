@@ -1,188 +1,129 @@
-// 主题管理器 - 修改版
-class ThemeManager {
-    constructor() {
-        this.themes = {
-            light: { name: "浅色模式", bg: "#f8f9fa", text: "#2c3e50" },
-            dark: { name: "深色模式", bg: "#1a1a1a", text: "#ffffff" },
-            nature: { name: "自然模式", bg: "#f5f5dc", text: "#2c3e50" }
+// ====== 主题管理器 - 三保险强制生效版 ======
+(function() {
+    console.log('🎨 主题管理器启动');
+    
+    // 主题定义
+    const themes = {
+        light: { bg: '#f8f9fa', text: '#2c3e50', name: '浅色' },
+        dark: { bg: '#1a1a1a', text: '#ffffff', name: '深色' },
+        nature: { bg: '#f5f5dc', text: '#2c3e50', name: '自然' }
+    };
+    
+    // 三重保险应用主题
+    function applyTheme(theme) {
+        console.log('🔄 切换主题:', theme);
+        const colors = themes[theme] || themes.light;
+        
+        // 保险1: 直接设置body样式（最高优先级）
+        document.body.style.backgroundColor = colors.bg;
+        document.body.style.color = colors.text;
+        
+        // 保险2: 设置CSS变量
+        document.documentElement.style.setProperty('--bg-color', colors.bg);
+        document.documentElement.style.setProperty('--text-color', colors.text);
+        
+        // 保险3: 设置HTML属性
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // 保存到本地存储
+        localStorage.setItem('theme', theme);
+        
+        // 更新按钮状态
+        updateButtons(theme);
+        
+        showNotice(`已切换到${colors.name}模式`);
+    }
+    
+    // 更新按钮状态
+    function updateButtons(theme) {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            const isActive = btn.getAttribute('data-theme') === theme;
+            btn.classList.toggle('active', isActive);
+        });
+    }
+    
+    // 字体切换
+    function initFontSelector() {
+        const selector = document.getElementById('fontSelector');
+        if (!selector) return;
+        
+        // 恢复保存的字体
+        const savedFont = localStorage.getItem('font');
+        if (savedFont) {
+            selector.value = savedFont;
+            document.body.style.fontFamily = savedFont;
+        }
+        
+        // 监听变化
+        selector.addEventListener('change', function() {
+            const font = this.value;
+            document.body.style.fontFamily = font;
+            localStorage.setItem('font', font);
+            showNotice(`字体已更改`);
+        });
+    }
+    
+    // 绑定按钮事件
+    function bindThemeButtons() {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            // 移除旧事件，绑定新事件
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', function() {
+                const theme = this.getAttribute('data-theme');
+                applyTheme(theme);
+            });
+        });
+    }
+    
+    // 显示通知
+    function showNotice(text) {
+        const notice = document.createElement('div');
+        notice.textContent = text;
+        notice.style.cssText = `
+            position: fixed; top: 80px; right: 20px;
+            background: #4A90E2; color: white; padding: 10px 20px;
+            border-radius: 6px; z-index: 9999; font-size: 14px;
+            animation: fadeIn 0.3s;
+        `;
+        document.body.appendChild(notice);
+        setTimeout(() => notice.remove(), 2000);
+    }
+    
+    // 初始化
+    function init() {
+        console.log('🚀 初始化主题系统...');
+        
+        // 应用保存的主题
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+        
+        // 绑定事件
+        bindThemeButtons();
+        initFontSelector();
+        
+        console.log('✅ 主题系统初始化完成');
+        
+        // 调试函数
+        window.debugTheme = function() {
+            console.log('=== 主题调试 ===');
+            console.log('当前主题:', localStorage.getItem('theme'));
+            console.log('Body背景色:', getComputedStyle(document.body).backgroundColor);
+            console.log('Body文字色:', getComputedStyle(document.body).color);
+            console.log('data-theme属性:', document.documentElement.getAttribute('data-theme'));
         };
         
-        this.init();
+        window.resetTheme = function() {
+            localStorage.clear();
+            location.reload();
+        };
     }
     
-    init() {
-        console.log("主题管理器初始化...");
-        
-        // 1. 恢复保存的主题
-        const savedTheme = localStorage.getItem("theme") || "light";
-        console.log("恢复主题:", savedTheme);
-        this.applyTheme(savedTheme, true);  // true表示初始化时不显示通知
-        
-        // 2. 绑定主题按钮
-        document.querySelectorAll(".theme-btn").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const theme = e.currentTarget.getAttribute("data-theme");
-                console.log("点击主题按钮:", theme);
-                this.applyTheme(theme);
-                this.updateActiveButton(theme);
-                this.showNotification(`已切换到${this.themes[theme].name}`);
-            });
-        });
-        
-        // 3. 字体功能
-        const fontSelector = document.getElementById("fontSelector");
-        if (fontSelector) {
-            // 恢复字体
-            const savedFont = localStorage.getItem("font");
-            if (savedFont) {
-                fontSelector.value = savedFont;
-                document.body.style.fontFamily = savedFont;
-                console.log("恢复字体:", savedFont);
-            }
-            
-            // 监听变化
-            fontSelector.addEventListener("change", (e) => {
-                const fontValue = e.target.value;
-                document.body.style.fontFamily = fontValue;
-                localStorage.setItem("font", fontValue);
-                
-                const fontName = e.target.options[e.target.selectedIndex].text;
-                this.showNotification(`字体已更改为：${fontName}`);
-                console.log("切换字体:", fontValue);
-            });
-        }
-        
-        // 4. 音频功能
-        const audioSelector = document.getElementById("audioSelector");
-        if (audioSelector) {
-            const savedAudio = localStorage.getItem("audio-setting");
-            if (savedAudio) audioSelector.value = savedAudio;
-            
-            audioSelector.addEventListener("change", (e) => {
-                localStorage.setItem("audio-setting", e.target.value);
-                this.showNotification(`音频设置已更新`);
-            });
-        }
-        
-        // 5. 更新按钮状态
-        this.updateActiveButton(savedTheme);
-        
-        console.log("主题管理器初始化完成");
+    // 启动
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-    
-    applyTheme(themeName, silent = false) {
-        if (!this.themes[themeName]) {
-            console.error("未知主题:", themeName);
-            return;
-        }
-        
-        const theme = this.themes[themeName];
-        
-        // 方法1：设置data-theme属性（让CSS变量生效）
-        document.documentElement.setAttribute("data-theme", themeName);
-        
-        // 方法2：直接设置body样式（确保100%生效）
-        document.body.style.backgroundColor = theme.bg;
-        document.body.style.color = theme.text;
-        
-        // 方法3：保存到localStorage
-        localStorage.setItem("theme", themeName);
-        
-        // 调试信息
-        console.log(`应用主题: ${themeName}`);
-        console.log(`设置背景色: ${theme.bg}`);
-        console.log(`实际背景色: ${getComputedStyle(document.body).backgroundColor}`);
-        
-        if (!silent) {
-            this.showNotification(`已切换到${theme.name}`);
-        }
-    }
-    
-    updateActiveButton(themeName) {
-        document.querySelectorAll(".theme-btn").forEach(btn => {
-            const btnTheme = btn.getAttribute("data-theme");
-            if (btnTheme === themeName) {
-                btn.classList.add("active");
-            } else {
-                btn.classList.remove("active");
-            }
-        });
-    }
-    
-    showNotification(message) {
-        // 创建通知
-        const notification = document.createElement("div");
-        notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: var(--card-bg);
-            color: var(--text-color);
-            padding: 12px 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 999;
-            animation: slideInRight 0.3s ease;
-            border-left: 4px solid var(--primary-color);
-        `;
-        
-        // 添加动画
-        const style = document.createElement("style");
-        style.textContent = `
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes fadeOut {
-                to { opacity: 0; transform: translateY(-10px); }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        document.body.appendChild(notification);
-        
-        // 3秒后移除
-        setTimeout(() => {
-            notification.style.animation = "fadeOut 0.3s ease";
-            setTimeout(() => {
-                notification.remove();
-                style.remove();
-            }, 300);
-        }, 3000);
-    }
-    
-    // 调试方法
-    debug() {
-        console.log("=== 主题调试 ===");
-        console.log("HTML data-theme:", document.documentElement.getAttribute("data-theme"));
-        console.log("Body背景色:", getComputedStyle(document.body).backgroundColor);
-        console.log("CSS变量--bg-color:", getComputedStyle(document.documentElement).getPropertyValue("--bg-color"));
-        console.log("保存的主题:", localStorage.getItem("theme"));
-        console.log("保存的字体:", localStorage.getItem("font"));
-    }
-}
-
-// 初始化
-document.addEventListener("DOMContentLoaded", () => {
-    window.themeManager = new ThemeManager();
-    
-    // 确保Font Awesome加载
-    if (!document.querySelector('link[href*="font-awesome"]')) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
-        document.head.appendChild(link);
-    }
-    
-    // 添加调试快捷键 Ctrl+D
-    document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "d") {
-            e.preventDefault();
-            if (window.themeManager) window.themeManager.debug();
-        }
-    });
-});
+})();
