@@ -1,6 +1,6 @@
-/* ===== 主题变量系统 ===== */
+/* ===== 主题变量系统 - 修复版 ===== */
 :root {
-    /* 浅色主题（默认） */
+    /* 浅色主题 */
     --primary-color: #4A90E2;
     --secondary-color: #7B68EE;
     --accent-color: #00CED1;
@@ -37,7 +37,7 @@
     --warning-color: #f1c40f;
     --error-color: #ff6b6b;
     
-    --bg-color: #1a1a1a;
+    --bg-color: #1a1a1a !important;  /* 添加 !important 确保生效 */
     --card-bg: #2d2d2d;
     --sidebar-bg: #252525;
     --text-color: #ffffff;
@@ -57,7 +57,7 @@
     --secondary-color: #16a085;
     --accent-color: #2ecc71;
     
-    --bg-color: #f5f5dc;
+    --bg-color: #f5f5dc !important;  /* 添加 !important 确保生效 */
     --card-bg: #ffffff;
     --text-color: #2c3e50;
     --text-secondary: #27ae60;
@@ -65,23 +65,45 @@
     --border-color: #bdc3c7;
 }
 
-/* ===== 全局基础样式 ===== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* ===== 确保背景色强制应用 ===== */
 body {
     font-family: var(--font-family);
-    background-color: var(--bg-color);
+    background-color: var(--bg-color) !important;  /* 关键修复：添加 !important */
     color: var(--text-color);
     line-height: 1.6;
     transition: var(--transition);
     min-height: 100vh;
+    margin: 0;
 }
 
-/* ===== 主题控制栏 ===== */
+/* ===== 玻璃拟态效果保留 ===== */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .glass-effect {
+    background: rgba(45, 45, 45, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== 动画效果保留 ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.fade-in { animation: fadeIn 0.5s ease; }
+.slide-in { animation: slideIn 0.3s ease; }
+
+/* ===== 主题控制栏 - 保留所有样式 ===== */
 .theme-controls {
     position: fixed;
     top: 20px;
@@ -96,6 +118,7 @@ body {
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .control-group {
@@ -139,7 +162,7 @@ body {
     border-color: var(--primary-color);
 }
 
-.font-selector {
+.font-selector, .audio-selector {
     padding: 6px 12px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -149,69 +172,11 @@ body {
     transition: var(--transition);
 }
 
-.font-selector:hover {
+.font-selector:hover, .audio-selector:hover {
     border-color: var(--primary-color);
 }
 
-.audio-selector {
-    padding: 6px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--card-bg);
-    color: var(--text-color);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.audio-selector:hover {
-    border-color: var(--primary-color);
-}
-
-/* 玻璃拟态效果 */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] .glass-effect {
-    background: rgba(45, 45, 45, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 动画效果 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.5s ease;
-}
-
-.slide-in {
-    animation: slideIn 0.3s ease;
-}
-
-/* 响应式设计 */
+/* ===== 响应式设计保留 ===== */
 @media (max-width: 768px) {
     .theme-controls {
         flex-wrap: wrap;
@@ -219,5 +184,10 @@ body {
         top: 10px;
         right: 10px;
         left: 10px;
+    }
+    
+    .control-group {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
