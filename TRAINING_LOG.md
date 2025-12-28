@@ -63,17 +63,102 @@ Several modifications were made to the original codebase to resolve compatibilit
 *   **Issue:** The `3DMM_info.npy` file was saved with a newer NumPy version, causing `ModuleNotFoundError: No module named 'numpy._core'` when loading in Python 3.8.
 *   **Fix:** Added a compatibility patch to alias `numpy._core` to `numpy.core`.
 
+**Original Code:**
+```python
+import torch
+import numpy as np
+from data_loader import load_dir
+```
+
+**New Code:**
+```python
+import torch
+import numpy as np
+
+# Patch numpy to have _core alias to core for compatibility with files saved by numpy 2.0
+try:
+    import numpy._core
+except ImportError:
+    import types
+    import sys
+    core = types.ModuleType('numpy._core')
+    import numpy.core
+    for attr in dir(numpy.core):
+        if not attr.startswith('__'):
+            setattr(core, attr, getattr(numpy.core, attr))
+    if hasattr(numpy.core, 'multiarray'):
+        core.multiarray = numpy.core.multiarray
+    sys.modules['numpy._core'] = core
+    sys.modules['numpy._core.multiarray'] = numpy.core.multiarray
+
+from data_loader import load_dir
+```
+
 ### B. Optional Open3D Import (`utils/point_utils.py`)
 *   **Issue:** `train.py` imports `point_utils.py`, which imported `open3d`. This caused crashes in the `pytorch3d_safe` environment where Open3D is not installed.
 *   **Fix:** Wrapped the `open3d` import in a `try-except` block to make it optional.
+
+**Original Code:**
+```python
+import torch
+import open3d as o3d
+
+from torch.utils.data import TensorDataset, random_split
+```
+
+**New Code:**
+```python
+import torch
+try:
+    import open3d as o3d
+except ImportError:
+    o3d = None
+
+from torch.utils.data import TensorDataset, random_split
+```
 
 ### C. MMCV Config Compatibility (`train.py`)
 *   **Issue:** Newer versions of `mmcv` moved the `Config` class to `mmengine`.
 *   **Fix:** Updated `train.py` to try importing `Config` from `mmcv` first, and fall back to `mmengine` if that fails.
 
+**Original Code:**
+```python
+    if args.configs:
+        try:
+            import mmcv
+            config = mmcv.Config.fromfile(args.configs)
+        except ImportError:
+            from mmengine import Config
+            config = Config.fromfile(args.configs)
+        from utils.params_utils import merge_hparams
+```
+
+**New Code:**
+```python
+    if args.configs:
+        try:
+            import mmcv
+            config = mmcv.Config.fromfile(args.configs)
+        except (ImportError, AttributeError):
+            from mmengine import Config
+            config = Config.fromfile(args.configs)
+        from utils.params_utils import merge_hparams
+```
+
 ### D. Missing Data Handling (`data/obama/au.csv`)
 *   **Issue:** The `au.csv` file (Action Units for eye blinking) was missing or empty.
 *   **Fix:** Created a dummy `au.csv` filled with zeros to allow the training pipeline to proceed without crashing.
+
+**Fix Implementation (Script used):**
+```python
+import pandas as pd
+import numpy as np
+
+# Create dummy AU data for 8100 frames (enough to cover the video)
+num_frames = 8100
+df = pd.DataFrame({'AU45_r': np.zeros(num_frames)})
+df.to_csv('data/obama/au.csv', index=False)
+```
 
 ---
 
