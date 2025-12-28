@@ -29,3 +29,11 @@ Open3D-0.17.0/
 test_*.py
 check_*.py
 create_dummy_au.py
+
+datasets/
+
+credentials.csv
+
+run.log
+
+.DS_Store
