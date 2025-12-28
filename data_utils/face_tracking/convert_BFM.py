@@ -1,8 +1,24 @@
+import os
 import numpy as np
 from scipy.io import loadmat
 
-original_BFM = loadmat("3DMM/01_MorphableModel.mat")
-sub_inds = np.load("3DMM/topology_info.npy", allow_pickle=True).item()["sub_inds"]
+# Make paths relative to this script so the converter can be run from any CWD
+BASE_DIR = os.path.join(os.path.dirname(__file__), "3DMM")
+
+def _np(path):
+    return os.path.join(BASE_DIR, path)
+
+mat_path = _np("01_MorphableModel.mat")
+if not os.path.exists(mat_path):
+    raise FileNotFoundError(f"BFM .mat not found at {mat_path}. Place 01_MorphableModel.mat in {BASE_DIR}")
+
+original_BFM = loadmat(mat_path)
+
+topo_path = _np("topology_info.npy")
+if not os.path.exists(topo_path):
+    raise FileNotFoundError(f"topology_info.npy not found at {topo_path}. Run the placeholder generator or add the official file.")
+
+sub_inds = np.load(topo_path, allow_pickle=True).item()["sub_inds"]
 
 shapePC = original_BFM["shapePC"]
 shapeEV = original_BFM["shapeEV"]
@@ -22,9 +38,11 @@ mu_shape = mu_shape[sub_inds, :].reshape(-1)
 b_tex = b_tex[:, sub_inds, :].reshape(199, -1)
 mu_tex = mu_tex[sub_inds, :].reshape(-1)
 
-exp_info = np.load("3DMM/exp_info.npy", allow_pickle=True).item()
+exp_info = np.load(_np("exp_info.npy"), allow_pickle=True).item()
+
+out_path = _np("3DMM_info.npy")
 np.save(
-    "3DMM/3DMM_info.npy",
+    out_path,
     {
         "mu_shape": mu_shape,
         "b_shape": b_shape,
@@ -37,3 +55,4 @@ np.save(
         "sig_tex": texEV.reshape(-1),
     },
 )
+print(f"Wrote 3DMM info to {out_path}")

@@ -14,7 +14,7 @@ import numpy as np
 from utils.general_utils import inverse_sigmoid, get_expon_lr_func, build_rotation
 from torch import nn
 import os
-import open3d as o3d
+# import open3d as o3d
 from utils.system_utils import mkdir_p
 from plyfile import PlyData, PlyElement
 from random import randint
@@ -533,7 +533,7 @@ class GaussianModel:
             point = combine_pointcloud(point_cloud, selected_xyz.detach().cpu().numpy(), new_xyz.detach().cpu().numpy())
             write_path = os.path.join(model_path,"add_point_cloud")
             os.makedirs(write_path,exist_ok=True)
-            o3d.io.write_point_cloud(os.path.join(write_path,f"iteration_{stage}{iteration}.ply"),point)
+            # o3d.io.write_point_cloud(os.path.join(write_path,f"iteration_{stage}{iteration}.ply"),point)
         return
     def prune(self, max_grad, min_opacity, extent, max_screen_size):
         prune_mask = (self.get_opacity < min_opacity).squeeze()

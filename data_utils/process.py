@@ -266,6 +266,9 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
         torso_image[~mask] = 0
         torso_alpha[~mask] = 0
 
+        #创建文件夹
+        folder_path = os.path.dirname(image_path.replace('ori_imgs', 'torso_imgs').replace('.jpg', '.png'))
+        os.makedirs(folder_path, exist_ok=True)
         cv2.imwrite(image_path.replace('ori_imgs', 'torso_imgs').replace('.jpg', '.png'), np.concatenate([torso_image, torso_alpha], axis=-1))
 
     print(f'[INFO] ===== extracted torso and gt images =====')

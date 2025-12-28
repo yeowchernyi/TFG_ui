@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ikan.TaylorKAN import TaylorKANLinear as KANLinear  
+# from ikan.TaylorKAN import TaylorKANLinear as KANLinear  
 
 class AudioAttNet(nn.Module):
     def __init__(self, dim_aud=64, seq_len=8):
@@ -74,7 +74,9 @@ class KAN(nn.Module):   #KAN
         net = []
         for l in range(num_layers):
             #kAN
-            net.append(KANLinear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
+            # net.append(KANLinear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
+            
+            net.append(nn.Linear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
         self.net = nn.ModuleList(net)
     
     def forward(self, x):
