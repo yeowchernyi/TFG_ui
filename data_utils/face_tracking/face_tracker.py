@@ -10,6 +10,23 @@ import argparse
 from pathlib import Path
 import torch
 import numpy as np
+
+# Patch numpy to have _core alias to core for compatibility with files saved by numpy 2.0
+try:
+    import numpy._core
+except ImportError:
+    import types
+    import sys
+    core = types.ModuleType('numpy._core')
+    import numpy.core
+    for attr in dir(numpy.core):
+        if not attr.startswith('__'):
+            setattr(core, attr, getattr(numpy.core, attr))
+    if hasattr(numpy.core, 'multiarray'):
+        core.multiarray = numpy.core.multiarray
+    sys.modules['numpy._core'] = core
+    sys.modules['numpy._core.multiarray'] = numpy.core.multiarray
+
 from data_loader import load_dir
 from facemodel import Face_3DMM
 from util import *

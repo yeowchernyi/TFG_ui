@@ -16,3 +16,16 @@ wandb/
 
 render_orig.py
 
+
+# Added by Copilot
+pytorch3d_source/
+pytorch3d-main/
+Open3D-0.17.0/
+*.mat
+*.npy
+*.pt
+*.ply
+*.obj
+test_*.py
+check_*.py
+create_dummy_au.py

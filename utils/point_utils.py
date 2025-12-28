@@ -1,9 +1,11 @@
 import torch
-import open3d as o3d
+try:
+    import open3d as o3d
+except ImportError:
+    o3d = None
 
 from torch.utils.data import TensorDataset, random_split
 from tqdm import tqdm
-import open3d as o3d
 import numpy as np
 from torch_cluster import grid_cluster
 def voxel_down_sample_custom(points, voxel_size):

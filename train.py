@@ -360,6 +360,7 @@ def setup_seed(seed):
      random.seed(seed)
      torch.backends.cudnn.deterministic = True
 if __name__ == "__main__":
+    os.chdir(sys.path[0])
     # Set up command line argument parser
     # torch.set_default_tensor_type('torch.FloatTensor')
     torch.cuda.empty_cache()
@@ -385,9 +386,13 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)
     if args.configs:
-        import mmcv
+        try:
+            import mmcv
+            config = mmcv.Config.fromfile(args.configs)
+        except (ImportError, AttributeError):
+            from mmengine import Config
+            config = Config.fromfile(args.configs)
         from utils.params_utils import merge_hparams
-        config = mmcv.Config.fromfile(args.configs)
         args = merge_hparams(args, config)
     print("Optimizing " + args.model_path)
 
