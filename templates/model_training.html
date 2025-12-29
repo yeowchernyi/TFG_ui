@@ -1,452 +1,1060 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>模型训练 - EGSTalker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <title>模型训练平台 - DATA HAMMER TALKING SYSTEM</title>
+    
+    <!-- Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 现有CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    
+    <!-- 模型训练页面专属样式 -->
     <style>
+        /* ===== 关键修复样式 ===== */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            min-height: 100vh !important;
+            transition: background-color 0.3s ease, color 0.3s ease !important;
+        }
+        
+        /* 基础主题样式 */
         body {
             background-color: #f8f9fa;
+            color: #2c3e50;
+            font-family: 'Microsoft YaHei', sans-serif;
         }
-        .card {
+        
+        /* 主题属性覆盖 */
+        [data-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        [data-theme="nature"] body {
+            background-color: #f5f5dc;
+            color: #2c3e50;
+        }
+        
+        /* 导航栏 */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        [data-theme="dark"] .nav-container {
+            background: rgba(45, 45, 45, 0.95);
+            border-color: #404040;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4A90E2;
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .nav-link {
+            color: #2c3e50;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        [data-theme="dark"] .nav-link {
+            color: #ffffff;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: #4A90E2;
+            color: white;
+        }
+        
+        /* 页面标题 */
+        .page-header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: linear-gradient(135deg, #4A90E2 0%, #7B68EE 100%);
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .page-title {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .page-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* 主要容器 */
+        .training-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+        
+        /* 训练面板布局 */
+        .training-panels {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 1024px) {
+            .training-panels {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 配置面板 */
+        .config-panel {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+        
+        [data-theme="dark"] .config-panel {
+            background: #2d2d2d;
+            border-color: #404040;
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4A90E2;
+        }
+        
+        .panel-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4A90E2, #7B68EE);
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
         }
-        .progress {
-            height: 10px;
-            border-radius: 5px;
+        
+        .panel-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
         }
-        .log-container {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 400px;
-            overflow-y: auto;
-            border-radius: 5px;
+        
+        [data-theme="dark"] .panel-title {
+            color: #ffffff;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        [data-theme="dark"] .form-label {
+            color: #ffffff;
+        }
+        
+        .form-control, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select {
+            background: #363636;
+            border-color: #404040;
+            color: #ffffff;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: #4A90E2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        /* 文件上传区域 */
+        .upload-area {
+            border: 2px dashed #4A90E2;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(74, 144, 226, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] .upload-area {
+            background: rgba(74, 144, 226, 0.1);
+            border-color: #7B68EE;
+        }
+        
+        .upload-area:hover {
+            background: rgba(74, 144, 226, 0.1);
+            border-color: #7B68EE;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #4A90E2;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        [data-theme="dark"] .upload-text {
+            color: #ffffff;
+        }
+        
+        .upload-hint {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        [data-theme="dark"] .upload-hint {
+            color: #b0b0b0;
+        }
+        
+        .upload-preview {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        /* 状态面板 */
+        .status-panel {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+            height: fit-content;
+        }
+        
+        [data-theme="dark"] .status-panel {
+            background: #2d2d2d;
+            border-color: #404040;
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
             padding: 15px;
+            border-radius: 10px;
+            background: #f1f3f4;
         }
+        
+        [data-theme="dark"] .status-indicator {
+            background: #363636;
+        }
+        
+        .status-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: white;
+        }
+        
+        .status-ready .status-icon { background: #2ecc71; }
+        .status-running .status-icon { background: #3498db; animation: pulse 2s infinite; }
+        .status-completed .status-icon { background: #27ae60; }
+        .status-error .status-icon { background: #e74c3c; }
+        
+        .status-text h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+        
+        [data-theme="dark"] .status-text h3 {
+            color: #ffffff;
+        }
+        
+        .status-text p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        [data-theme="dark"] .status-text p {
+            color: #b0b0b0;
+        }
+        
+        /* 进度条 */
+        .progress-container {
+            margin: 25px 0;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        [data-theme="dark"] .progress-bar {
+            background: #363636;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4A90E2, #7B68EE);
+            border-radius: 6px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        /* 日志容器 */
+        .log-container {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+        
         .log-line {
-            margin-bottom: 2px;
+            color: #d4d4d4;
+            margin-bottom: 5px;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .status-badge {
-            padding: 5px 10px;
+        
+        .log-line.info { color: #569cd6; }
+        .log-line.warning { color: #ffd700; }
+        .log-line.error { color: #f44747; }
+        .log-line.success { color: #6a9955; }
+        
+        /* 控制按钮 */
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4A90E2, #7B68EE);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        
+        [data-theme="dark"] .btn-secondary {
+            background: #363636;
+            color: #ffffff;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #d5dbdb;
+        }
+        
+        [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+            background: #404040;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* 任务历史 */
+        .history-panel {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+            margin-top: 40px;
+        }
+        
+        [data-theme="dark"] .history-panel {
+            background: #2d2d2d;
+            border-color: #404040;
+        }
+        
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.3s ease;
+        }
+        
+        [data-theme="dark"] .history-item {
+            border-color: #404040;
+        }
+        
+        .history-item:hover {
+            background: #f8f9fa;
+        }
+        
+        [data-theme="dark"] .history-item:hover {
+            background: #363636;
+        }
+        
+        .history-info h4 {
+            margin: 0 0 5px;
+            color: #2c3e50;
+        }
+        
+        [data-theme="dark"] .history-info h4 {
+            color: #ffffff;
+        }
+        
+        .history-info p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        [data-theme="dark"] .history-info p {
+            color: #b0b0b0;
+        }
+        
+        .history-status {
+            padding: 6px 15px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 0.85em;
             font-weight: 600;
         }
-        .status-running { background-color: #d1ecf1; color: #0c5460; }
-        .status-completed { background-color: #d4edda; color: #155724; }
-        .status-failed { background-color: #f8d7da; color: #721c24; }
-        .status-stopped { background-color: #e2e3e5; color: #383d41; }
+        
+        .status-completed { background: #d5f4e6; color: #27ae60; }
+        .status-running { background: #e3f2fd; color: #3498db; }
+        .status-failed { background: #ffebee; color: #e74c3c; }
+        .status-stopped { background: #f5f5f5; color: #7f8c8d; }
+        
+        /* 动画 */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in { animation: fadeIn 0.5s ease; }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .page-title {
+                font-size: 2.2em;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-robot"></i> EGSTalker
+    <!-- ========== 导航栏 ========== -->
+    <nav class="nav-container">
+        <a href="/" class="nav-brand">
+            <i class="fas fa-hammer"></i>
+            DATA HAMMER
+        </a>
+        
+        <div class="nav-links">
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i> 首页
             </a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="/">首页</a>
-                <a class="nav-link active" href="/training">模型训练</a>
-                <a class="nav-link" href="/inference">推理演示</a>
-            </div>
+            <a href="/chat_system" class="nav-link">
+                <i class="fas fa-comments"></i> 人机对话
+            </a>
+            <a href="/model_training" class="nav-link active">
+                <i class="fas fa-brain"></i> 模型训练
+            </a>
+            <a href="/video_generation" class="nav-link">
+                <i class="fas fa-video"></i> 视频生成
+            </a>
         </div>
     </nav>
-
-    <div class="container mt-4">
-        <h2><i class="bi bi-gear"></i> 模型训练</h2>
-        <p class="text-muted">训练个性化语音驱动人脸模型</p>
-
-        <div class="row">
-            <!-- 左侧：配置表单 -->
-            <div class="col-md-5">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-sliders"></i> 训练配置</h5>
+    
+    <!-- ========== 页面标题 ========== -->
+    <header class="page-header">
+        <h1 class="page-title">模型训练平台</h1>
+        <p class="page-subtitle">
+            可视化训练界面，支持EGSTalker模型训练、进度监控、性能评估一站式服务
+        </p>
+    </header>
+    
+    <!-- ========== 主要训练容器 ========== -->
+    <main class="training-container">
+        <div class="training-panels">
+            <!-- 左侧：配置面板 -->
+            <div class="config-panel fade-in">
+                <div class="panel-header">
+                    <div class="panel-icon">
+                        <i class="fas fa-sliders-h"></i>
                     </div>
-                    <div class="card-body">
-                        <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
-                        <div id="successAlert" class="alert alert-success d-none" role="alert"></div>
-
-                        <form id="trainingForm">
-                            <!-- 视频上传 -->
-                            <div class="mb-3">
-                                <label class="form-label">上传训练视频</label>
-                                <div class="input-group">
-                                    <input type="file" class="form-control" id="videoFile" accept="video/*">
-                                    <button class="btn btn-outline-secondary" type="button" id="uploadBtn">
-                                        <i class="bi bi-upload"></i> 上传
-                                    </button>
-                                </div>
-                                <div class="form-text">支持MP4, AVI等格式，建议时长5-10分钟</div>
-                                <input type="hidden" id="videoPath">
-                            </div>
-
-                            <!-- 或使用现有数据 -->
-                            <div class="mb-3">
-                                <label class="form-label">或使用现有数据目录</label>
-                                <input type="text" class="form-control" id="dataDir" 
-                                       placeholder="例如: data/obama">
-                                <div class="form-text">留空则使用上传的视频</div>
-                            </div>
-
-                            <!-- 模型名称 -->
-                            <div class="mb-3">
-                                <label class="form-label">模型名称</label>
-                                <input type="text" class="form-control" id="modelName" 
-                                       placeholder="例如: my_model" value="my_model">
-                                <div class="form-text">训练完成后将保存在 output/[名称]</div>
-                            </div>
-
-                            <!-- 训练参数 -->
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label class="form-label">训练轮数</label>
-                                    <input type="number" class="form-control" id="epochs" value="100" min="1">
-                                </div>
-                                <div class="col">
-                                    <label class="form-label">配置文件</label>
-                                    <select class="form-select" id="configFile">
-                                        <option value="arguments/args.py">标准配置</option>
-                                        <option value="arguments/high_quality.py">高质量配置</option>
-                                        <option value="arguments/fast_training.py">快速训练</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- 高级选项 -->
-                            <div class="accordion mb-3" id="advancedOptions">
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed" type="button" 
-                                                data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">
-                                            <i class="bi bi-tools"></i> 高级选项
-                                        </button>
-                                    </h2>
-                                    <div id="collapseAdvanced" class="accordion-collapse collapse">
-                                        <div class="accordion-body">
-                                            <div class="mb-3">
-                                                <label class="form-label">继续训练检查点</label>
-                                                <input type="text" class="form-control" id="checkpoint" 
-                                                       placeholder="例如: output/obama/checkpoint.pth">
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="preprocess" checked>
-                                                <label class="form-check-label">
-                                                    自动预处理视频
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 操作按钮 -->
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-primary btn-lg" id="startBtn">
-                                    <i class="bi bi-play-circle"></i> 开始训练
-                                </button>
-                                <button type="button" class="btn btn-danger btn-lg d-none" id="stopBtn">
-                                    <i class="bi bi-stop-circle"></i> 停止训练
-                                </button>
-                            </div>
-                        </form>
+                    <h2 class="panel-title">训练配置</h2>
+                </div>
+                
+                <!-- 视频上传 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-video"></i>
+                        训练视频
+                    </label>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="videoFile" accept="video/*" style="display: none;">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">点击或拖拽上传训练视频</div>
+                        <div class="upload-hint">支持 MP4、AVI、MOV 格式，建议时长 1-5 分钟</div>
+                    </div>
+                    <div class="upload-preview" id="uploadPreview"></div>
+                </div>
+                
+                <!-- 模型名称 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-robot"></i>
+                        模型名称
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="modelName" 
+                           placeholder="例如: my_face_model"
+                           value="my_model">
+                </div>
+                
+                <!-- 训练参数 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-cogs"></i>
+                        训练轮数
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="epochs" 
+                           value="100" 
+                           min="1" 
+                           max="1000">
+                </div>
+                
+                <!-- 配置文件 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-file-code"></i>
+                        配置文件
+                    </label>
+                    <select class="form-select" id="configFile">
+                        <option value="arguments/args.py">标准配置</option>
+                        <option value="arguments/high_quality.py">高质量配置</option>
+                        <option value="arguments/fast_training.py">快速训练</option>
+                    </select>
+                </div>
+                
+                <!-- 高级选项 -->
+                <div class="form-group">
+                    <div class="form-label">
+                        <i class="fas fa-tools"></i>
+                        高级选项
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="preprocessVideo" checked>
+                            <span>自动预处理视频</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="useGPU">
+                            <span>使用GPU加速</span>
+                        </label>
                     </div>
                 </div>
-
-                <!-- 任务历史 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> 训练历史</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="taskHistory" class="list-group">
-                            <!-- 任务历史将通过JavaScript动态加载 -->
-                        </div>
-                    </div>
+                
+                <!-- 控制按钮 -->
+                <div class="control-buttons">
+                    <button class="btn btn-primary" id="startBtn" onclick="startTraining()">
+                        <i class="fas fa-play"></i>
+                        开始训练
+                    </button>
+                    <button class="btn btn-secondary" id="stopBtn" onclick="stopTraining()" disabled>
+                        <i class="fas fa-stop"></i>
+                        停止训练
+                    </button>
                 </div>
             </div>
-
-            <!-- 右侧：训练状态和日志 -->
-            <div class="col-md-7">
-                <!-- 当前任务状态 -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-activity"></i> 训练状态</h5>
-                        <span id="currentStatus" class="status-badge status-stopped">等待中</span>
+            
+            <!-- 右侧：状态面板 -->
+            <div class="status-panel fade-in" style="animation-delay: 0.1s;">
+                <div class="panel-header">
+                    <div class="panel-icon">
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <div class="card-body">
-                        <!-- 任务信息 -->
-                        <div id="taskInfo" class="d-none">
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <small class="text-muted">任务ID</small>
-                                    <div id="taskId" class="fw-bold"></div>
-                                </div>
-                                <div class="col">
-                                    <small class="text-muted">开始时间</small>
-                                    <div id="startTime" class="fw-bold"></div>
-                                </div>
-                            </div>
+                    <h2 class="panel-title">训练状态</h2>
+                </div>
+                
+                <!-- 状态指示器 -->
+                <div class="status-indicator status-ready" id="statusIndicator">
+                    <div class="status-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="status-text">
+                        <h3>准备就绪</h3>
+                        <p>等待开始训练任务</p>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span>训练进度</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <!-- 任务信息 -->
+                <div style="margin-top: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #2c3e50;">
+                        <i class="fas fa-info-circle"></i>
+                        任务信息
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <small style="color: #7f8c8d;">任务ID</small>
+                            <div id="taskId" style="font-weight: 500; word-break: break-all;">-</div>
                         </div>
-
-                        <!-- 进度条 -->
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>训练进度</span>
-                                <span id="progressText">0%</span>
-                            </div>
-                            <div class="progress">
-                                <div id="progressBar" class="progress-bar" role="progressbar" 
-                                     style="width: 0%"></div>
-                            </div>
+                        <div>
+                            <small style="color: #7f8c8d;">开始时间</small>
+                            <div id="startTime" style="font-weight: 500;">-</div>
                         </div>
-
-                        <!-- 日志切换 -->
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6><i class="bi bi-terminal"></i> 训练日志</h6>
-                            <div>
-                                <button class="btn btn-sm btn-outline-secondary me-2" id="clearLogsBtn">
-                                    <i class="bi bi-trash"></i> 清空
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary" id="toggleLogsBtn">
-                                    <i class="bi bi-chevron-down"></i> 展开
-                                </button>
-                            </div>
+                        <div>
+                            <small style="color: #7f8c8d;">预计用时</small>
+                            <div id="estimatedTime" style="font-weight: 500;">-</div>
                         </div>
-
-                        <!-- 日志容器 -->
-                        <div id="logContainer" class="log-container d-none">
-                            <div id="logContent"></div>
-                        </div>
-
-                        <!-- 无任务时的提示 -->
-                        <div id="noTaskMessage" class="text-center text-muted py-4">
-                            <i class="bi bi-info-circle" style="font-size: 48px;"></i>
-                            <p class="mt-2">暂无进行中的训练任务<br>点击"开始训练"按钮启动训练</p>
+                        <div>
+                            <small style="color: #7f8c8d;">GPU使用</small>
+                            <div id="gpuUsage" style="font-weight: 500;">-</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- 训练说明 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> 训练说明</h5>
+                
+                <!-- 训练日志 -->
+                <div style="margin-top: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #2c3e50;">
+                            <i class="fas fa-terminal"></i>
+                            训练日志
+                        </h4>
+                        <button onclick="clearLogs()" style="background: none; border: none; color: #4A90E2; cursor: pointer; font-size: 0.9em;">
+                            <i class="fas fa-trash-alt"></i> 清空
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> 
-                                <strong>步骤1:</strong> 上传训练视频或指定已有数据目录</li>
-                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> 
-                                <strong>步骤2:</strong> 系统自动预处理视频数据</li>
-                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> 
-                                <strong>步骤3:</strong> 训练3D高斯泼溅模型</li>
-                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> 
-                                <strong>步骤4:</strong> 训练完成后可在推理页面使用</li>
-                        </ul>
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>注意:</strong> 训练过程可能需要较长时间（数小时），请确保设备有足够的GPU内存。
-                        </div>
+                    <div class="log-container" id="logContainer">
+                        <div class="log-line info">系统就绪，等待开始训练...</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <!-- 训练历史 -->
+        <div class="history-panel fade-in">
+            <div class="panel-header">
+                <div class="panel-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h2 class="panel-title">训练历史</h2>
+                <button onclick="refreshHistory()" style="margin-left: auto; background: none; border: none; color: #4A90E2; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+            </div>
+            
+            <div class="history-list" id="historyList">
+                <!-- 历史记录会动态加载到这里 -->
+                <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                    <i class="fas fa-clock" style="font-size: 3em; margin-bottom: 15px;"></i>
+                    <p>暂无训练历史记录</p>
+                </div>
+            </div>
+        </div>
+    </main>
     
+    <!-- ========== JavaScript ========== -->
     <script>
+        // 全局变量
         let currentTaskId = null;
         let pollingInterval = null;
-        let logsExpanded = false;
-
+        
         // DOM元素
         const elements = {
             videoFile: document.getElementById('videoFile'),
-            uploadBtn: document.getElementById('uploadBtn'),
-            videoPath: document.getElementById('videoPath'),
-            dataDir: document.getElementById('dataDir'),
+            uploadArea: document.getElementById('uploadArea'),
+            uploadPreview: document.getElementById('uploadPreview'),
             modelName: document.getElementById('modelName'),
             epochs: document.getElementById('epochs'),
             configFile: document.getElementById('configFile'),
-            checkpoint: document.getElementById('checkpoint'),
-            preprocess: document.getElementById('preprocess'),
+            preprocessVideo: document.getElementById('preprocessVideo'),
+            useGPU: document.getElementById('useGPU'),
             startBtn: document.getElementById('startBtn'),
             stopBtn: document.getElementById('stopBtn'),
-            errorAlert: document.getElementById('errorAlert'),
-            successAlert: document.getElementById('successAlert'),
-            currentStatus: document.getElementById('currentStatus'),
-            taskInfo: document.getElementById('taskInfo'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            progressText: document.getElementById('progressText'),
+            progressFill: document.getElementById('progressFill'),
             taskId: document.getElementById('taskId'),
             startTime: document.getElementById('startTime'),
-            progressBar: document.getElementById('progressBar'),
-            progressText: document.getElementById('progressText'),
+            estimatedTime: document.getElementById('estimatedTime'),
+            gpuUsage: document.getElementById('gpuUsage'),
             logContainer: document.getElementById('logContainer'),
-            logContent: document.getElementById('logContent'),
-            toggleLogsBtn: document.getElementById('toggleLogsBtn'),
-            clearLogsBtn: document.getElementById('clearLogsBtn'),
-            noTaskMessage: document.getElementById('noTaskMessage'),
-            taskHistory: document.getElementById('taskHistory')
+            historyList: document.getElementById('historyList')
         };
-
-        // API基础URL
-        const API_BASE = '';
-
-        // 上传视频文件
-        elements.uploadBtn.addEventListener('click', async () => {
-            const file = elements.videoFile.files[0];
-            if (!file) {
-                showError('请选择要上传的视频文件');
+        
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎉 模型训练页面加载完成');
+            
+            // 初始化文件上传
+            initFileUpload();
+            
+            // 加载训练历史
+            loadTrainingHistory();
+            
+            // 应用主题系统（如果存在）
+            applyThemeSystem();
+        });
+        
+        // 初始化文件上传
+        function initFileUpload() {
+            // 点击上传区域触发文件选择
+            elements.uploadArea.addEventListener('click', () => {
+                elements.videoFile.click();
+            });
+            
+            // 拖拽上传
+            elements.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.uploadArea.style.borderColor = '#7B68EE';
+                elements.uploadArea.style.background = 'rgba(123, 104, 238, 0.1)';
+            });
+            
+            elements.uploadArea.addEventListener('dragleave', () => {
+                elements.uploadArea.style.borderColor = '#4A90E2';
+                elements.uploadArea.style.background = '';
+            });
+            
+            elements.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleVideoFile(files[0]);
+                }
+                elements.uploadArea.style.borderColor = '#4A90E2';
+                elements.uploadArea.style.background = '';
+            });
+            
+            // 文件选择
+            elements.videoFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleVideoFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        // 处理视频文件
+        function handleVideoFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('请选择视频文件！');
                 return;
             }
-
+            
+            // 显示文件信息
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            elements.uploadPreview.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <i class="fas fa-file-video" style="font-size: 2em; color: #4A90E2;"></i>
+                    <div>
+                        <div style="font-weight: 500; color: #2c3e50;">${file.name}</div>
+                        <div style="font-size: 0.9em; color: #7f8c8d;">${fileSize} MB</div>
+                    </div>
+                    <button onclick="removeVideoFile()" style="margin-left: auto; background: none; border: none; color: #e74c3c; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            elements.uploadPreview.style.display = 'block';
+            
+            // 自动设置模型名称
+            const modelName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, '_');
+            elements.modelName.value = modelName;
+            
+            // 上传文件到服务器
+            uploadVideoFile(file);
+        }
+        
+        // 移除视频文件
+        function removeVideoFile() {
+            elements.videoFile.value = '';
+            elements.uploadPreview.style.display = 'none';
+            elements.uploadPreview.innerHTML = '';
+        }
+        
+        // 上传视频文件到服务器
+        async function uploadVideoFile(file) {
             const formData = new FormData();
             formData.append('file', file);
-
+            
             try {
-                elements.uploadBtn.disabled = true;
-                elements.uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 上传中...';
-
-                const response = await fetch(`${API_BASE}/api/upload/video`, {
+                addLog('正在上传视频文件...', 'info');
+                
+                const response = await fetch('/api/upload/video', {
                     method: 'POST',
                     body: formData
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (data.success) {
-                    elements.videoPath.value = data.path;
-                    showSuccess('视频上传成功！');
-                    
-                    // 自动填充模型名称
-                    const modelName = file.name.replace(/\.[^/.]+$/, "");
-                    elements.modelName.value = modelName;
+                    addLog(`视频上传成功: ${data.filename}`, 'success');
+                    // 可以在这里保存文件路径
+                    localStorage.setItem('lastVideoPath', data.path);
                 } else {
-                    showError(data.error || '上传失败');
+                    addLog(`上传失败: ${data.error}`, 'error');
+                    alert('视频上传失败: ' + data.error);
                 }
             } catch (error) {
-                showError('上传失败: ' + error.message);
-            } finally {
-                elements.uploadBtn.disabled = false;
-                elements.uploadBtn.innerHTML = '<i class="bi bi-upload"></i> 上传';
+                addLog(`上传错误: ${error.message}`, 'error');
+                alert('上传过程中发生错误: ' + error.message);
             }
-        });
-
+        }
+        
         // 开始训练
-        elements.startBtn.addEventListener('click', async () => {
+        async function startTraining() {
             // 验证输入
-            const videoPath = elements.videoPath.value;
-            const dataDir = elements.dataDir.value;
-            
-            if (!videoPath && !dataDir) {
-                showError('请上传视频或指定数据目录');
+            const videoFile = elements.videoFile.files[0];
+            if (!videoFile) {
+                alert('请先上传训练视频！');
                 return;
             }
-
-            // 准备配置
+            
+            const modelName = elements.modelName.value.trim();
+            if (!modelName) {
+                alert('请输入模型名称！');
+                return;
+            }
+            
+            // 准备训练配置
             const config = {
-                video_path: videoPath,
-                data_dir: dataDir,
-                model_path: `output/${elements.modelName.value}`,
+                action: 'start',
+                video_path: localStorage.getItem('lastVideoPath') || '',
+                model_path: `output/${modelName}`,
                 config_file: elements.configFile.value,
                 epochs: parseInt(elements.epochs.value),
-                preprocess: elements.preprocess.checked
+                preprocess: elements.preprocessVideo.checked,
+                use_gpu: elements.useGPU.checked
             };
-
-            // 如果有检查点
-            if (elements.checkpoint.value) {
-                config.checkpoint = elements.checkpoint.value;
-            }
-
+            
             try {
+                // 禁用开始按钮，启用停止按钮
                 elements.startBtn.disabled = true;
+                elements.stopBtn.disabled = false;
                 
-                const response = await fetch(`${API_BASE}/api/train/start`, {
+                // 更新状态
+                updateStatus('starting', '正在启动训练任务...');
+                addLog('正在启动训练任务...', 'info');
+                
+                // 发送训练请求
+                const response = await fetch('/model_training', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(config)
                 });
-
+                
                 const data = await response.json();
-
-                if (data.success) {
+                
+                if (data.status === 'success') {
                     currentTaskId = data.task_id;
-                    showSuccess('训练任务已启动！');
                     
-                    // 更新UI状态
-                    updateUIForRunningTask();
+                    // 更新任务信息
+                    elements.taskId.textContent = currentTaskId.substring(0, 8) + '...';
+                    elements.startTime.textContent = new Date().toLocaleTimeString();
+                    elements.estimatedTime.textContent = '计算中...';
                     
-                    // 开始轮询状态
+                    // 开始轮询训练状态
                     startPolling();
                     
-                    // 加载任务历史
-                    loadTaskHistory();
+                    addLog('训练任务已成功启动', 'success');
                 } else {
-                    showError(data.error || '启动训练失败');
+                    addLog(`启动失败: ${data.error}`, 'error');
+                    alert('启动训练失败: ' + (data.error || '未知错误'));
+                    
+                    // 恢复按钮状态
                     elements.startBtn.disabled = false;
+                    elements.stopBtn.disabled = true;
+                    updateStatus('ready', '准备就绪');
                 }
             } catch (error) {
-                showError('启动训练失败: ' + error.message);
+                addLog(`请求错误: ${error.message}`, 'error');
+                alert('发生错误: ' + error.message);
+                
+                // 恢复按钮状态
                 elements.startBtn.disabled = false;
+                elements.stopBtn.disabled = true;
+                updateStatus('ready', '准备就绪');
             }
-        });
-
+        }
+        
         // 停止训练
-        elements.stopBtn.addEventListener('click', async () => {
-            if (!currentTaskId) return;
-
+        async function stopTraining() {
+            if (!currentTaskId) {
+                alert('没有正在运行的任务');
+                return;
+            }
+            
             if (!confirm('确定要停止训练吗？已训练的进度可能会丢失。')) {
                 return;
             }
-
+            
             try {
-                const response = await fetch(`${API_BASE}/api/train/stop/${currentTaskId}`, {
+                const response = await fetch(`/api/train/stop/${currentTaskId}`, {
                     method: 'POST'
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (data.success) {
-                    showSuccess('训练已停止');
+                    addLog('训练任务已停止', 'warning');
+                    updateStatus('stopped', '训练已停止');
+                    
+                    // 停止轮询
                     stopPolling();
+                    
+                    // 更新按钮状态
+                    elements.startBtn.disabled = false;
+                    elements.stopBtn.disabled = true;
                 } else {
-                    showError(data.error || '停止训练失败');
+                    addLog(`停止失败: ${data.error}`, 'error');
+                    alert('停止训练失败: ' + data.error);
                 }
             } catch (error) {
-                showError('停止训练失败: ' + error.message);
+                addLog(`停止错误: ${error.message}`, 'error');
+                alert('停止过程中发生错误: ' + error.message);
             }
-        });
-
-        // 切换日志显示
-        elements.toggleLogsBtn.addEventListener('click', () => {
-            logsExpanded = !logsExpanded;
-            
-            if (logsExpanded) {
-                elements.logContainer.classList.remove('d-none');
-                elements.toggleLogsBtn.innerHTML = '<i class="bi bi-chevron-up"></i> 收起';
-            } else {
-                elements.logContainer.classList.add('d-none');
-                elements.toggleLogsBtn.innerHTML = '<i class="bi bi-chevron-down"></i> 展开';
-            }
-        });
-
-        // 清空日志
-        elements.clearLogsBtn.addEventListener('click', () => {
-            elements.logContent.innerHTML = '';
-        });
-
-        // 轮询训练状态
+        }
+        
+        // 开始轮询训练状态
         function startPolling() {
             if (pollingInterval) {
                 clearInterval(pollingInterval);
@@ -457,207 +1065,237 @@
                     stopPolling();
                     return;
                 }
-
+                
                 try {
-                    const response = await fetch(`${API_BASE}/api/train/status/${currentTaskId}`);
+                    // 使用API端点获取状态
+                    const response = await fetch(`/api/train/status/${currentTaskId}`);
                     const data = await response.json();
-
+                    
                     if (data.success) {
                         updateTaskStatus(data.task);
                     } else {
                         // 任务可能不存在了
+                        addLog('任务状态获取失败，停止轮询', 'warning');
                         stopPolling();
                     }
                 } catch (error) {
                     console.error('轮询失败:', error);
                 }
-            }, 2000); // 每2秒轮询一次
+            }, 3000); // 每3秒轮询一次
         }
-
+        
+        // 停止轮询
         function stopPolling() {
             if (pollingInterval) {
                 clearInterval(pollingInterval);
                 pollingInterval = null;
             }
         }
-
+        
         // 更新任务状态
         function updateTaskStatus(task) {
-            // 更新状态标签
-            updateStatusBadge(task.status);
+            // 更新状态指示器
+            updateStatus(task.status, getStatusText(task.status));
             
             // 更新进度
             const progress = task.progress || 0;
-            elements.progressBar.style.width = `${progress}%`;
+            elements.progressFill.style.width = `${progress}%`;
             elements.progressText.textContent = `${progress.toFixed(1)}%`;
             
             // 更新日志
             if (task.recent_logs && task.recent_logs.length > 0) {
-                elements.logContent.innerHTML = '';
+                // 只添加新的日志
                 task.recent_logs.forEach(log => {
-                    const logLine = document.createElement('div');
-                    logLine.className = 'log-line';
-                    logLine.textContent = log;
-                    elements.logContent.appendChild(logLine);
+                    if (!logContainer.innerHTML.includes(log)) {
+                        addLog(log, 'info');
+                    }
                 });
-                
-                // 自动滚动到底部
-                elements.logContainer.scrollTop = elements.logContainer.scrollHeight;
+            }
+            
+            // 更新任务信息
+            if (task.end_time) {
+                elements.estimatedTime.textContent = '已完成';
             }
             
             // 如果任务完成或失败，停止轮询
             if (['completed', 'failed', 'stopped'].includes(task.status)) {
                 stopPolling();
-                updateUIForStoppedTask();
+                
+                // 更新按钮状态
+                elements.startBtn.disabled = false;
+                elements.stopBtn.disabled = true;
+                
+                // 重新加载历史记录
+                loadTrainingHistory();
                 
                 if (task.status === 'completed') {
-                    showSuccess('训练完成！');
+                    addLog('🎉 训练完成！', 'success');
+                    alert('训练完成！模型已保存。');
                 } else if (task.status === 'failed') {
-                    showError(`训练失败: ${task.error || '未知错误'}`);
+                    addLog(`❌ 训练失败: ${task.error || '未知错误'}`, 'error');
+                    alert('训练失败: ' + (task.error || '未知错误'));
                 }
             }
         }
-
-        // 更新状态标签
-        function updateStatusBadge(status) {
+        
+        // 更新状态指示器
+        function updateStatus(status, message) {
+            // 移除所有状态类
+            elements.statusIndicator.classList.remove('status-ready', 'status-running', 'status-completed', 'status-error');
+            
+            // 添加新状态类
+            let statusClass = 'status-ready';
+            let icon = 'fa-check';
+            
+            switch(status) {
+                case 'starting':
+                case 'preprocessing':
+                case 'training':
+                    statusClass = 'status-running';
+                    icon = 'fa-sync-alt';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    icon = 'fa-check-circle';
+                    break;
+                case 'failed':
+                    statusClass = 'status-error';
+                    icon = 'fa-exclamation-circle';
+                    break;
+                case 'stopped':
+                    statusClass = 'status-ready';
+                    icon = 'fa-stop-circle';
+                    break;
+            }
+            
+            elements.statusIndicator.classList.add(statusClass);
+            elements.statusIndicator.querySelector('.status-icon').innerHTML = `<i class="fas ${icon}"></i>`;
+            elements.statusIndicator.querySelector('h3').textContent = getStatusText(status);
+            elements.statusIndicator.querySelector('p').textContent = message;
+        }
+        
+        // 获取状态文本
+        function getStatusText(status) {
             const statusMap = {
-                'starting': { text: '启动中', class: 'status-running' },
-                'preprocessing': { text: '预处理中', class: 'status-running' },
-                'training': { text: '训练中', class: 'status-running' },
-                'completed': { text: '已完成', class: 'status-completed' },
-                'failed': { text: '失败', class: 'status-failed' },
-                'stopped': { text: '已停止', class: 'status-stopped' }
+                'ready': '准备就绪',
+                'starting': '启动中',
+                'preprocessing': '预处理中',
+                'training': '训练中',
+                'completed': '已完成',
+                'failed': '失败',
+                'stopped': '已停止'
             };
+            return statusMap[status] || status;
+        }
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            elements.logContainer.appendChild(logLine);
             
-            const statusInfo = statusMap[status] || { text: status, class: 'status-stopped' };
-            elements.currentStatus.textContent = statusInfo.text;
-            elements.currentStatus.className = `status-badge ${statusInfo.class}`;
+            // 自动滚动到底部
+            elements.logContainer.scrollTop = elements.logContainer.scrollHeight;
         }
-
-        // 更新UI为运行中状态
-        function updateUIForRunningTask() {
-            elements.startBtn.classList.add('d-none');
-            elements.stopBtn.classList.remove('d-none');
-            elements.taskInfo.classList.remove('d-none');
-            elements.noTaskMessage.classList.add('d-none');
-            elements.logContainer.classList.remove('d-none');
-            elements.toggleLogsBtn.innerHTML = '<i class="bi bi-chevron-up"></i> 收起';
-            logsExpanded = true;
-            
-            // 显示任务ID
-            elements.taskId.textContent = currentTaskId.substring(0, 8) + '...';
-            elements.startTime.textContent = new Date().toLocaleTimeString();
+        
+        // 清空日志
+        function clearLogs() {
+            elements.logContainer.innerHTML = '<div class="log-line info">日志已清空</div>';
         }
-
-        // 更新UI为停止状态
-        function updateUIForStoppedTask() {
-            elements.startBtn.classList.remove('d-none');
-            elements.stopBtn.classList.add('d-none');
-            elements.startBtn.disabled = false;
-        }
-
-        // 加载任务历史
-        async function loadTaskHistory() {
+        
+        // 加载训练历史
+        async function loadTrainingHistory() {
             try {
-                const response = await fetch(`${API_BASE}/api/train/list`);
+                const response = await fetch('/api/train/list');
                 const data = await response.json();
-
-                if (data.success) {
-                    renderTaskHistory(data.tasks);
+                
+                if (data.success && data.tasks.length > 0) {
+                    renderTrainingHistory(data.tasks);
+                } else {
+                    elements.historyList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                            <i class="fas fa-clock" style="font-size: 3em; margin-bottom: 15px;"></i>
+                            <p>暂无训练历史记录</p>
+                        </div>
+                    `;
                 }
             } catch (error) {
-                console.error('加载任务历史失败:', error);
+                console.error('加载历史记录失败:', error);
             }
         }
-
-        // 渲染任务历史
-        function renderTaskHistory(tasks) {
-            elements.taskHistory.innerHTML = '';
-            
-            if (!tasks || tasks.length === 0) {
-                elements.taskHistory.innerHTML = `
-                    <div class="text-center text-muted py-3">
-                        暂无训练历史
-                    </div>
-                `;
-                return;
-            }
-            
+        
+        // 渲染训练历史
+        function renderTrainingHistory(tasks) {
             // 按开始时间排序（最新的在前面）
             tasks.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
             
+            elements.historyList.innerHTML = '';
+            
             tasks.forEach(task => {
-                const taskItem = document.createElement('a');
-                taskItem.href = '#';
-                taskItem.className = 'list-group-item list-group-item-action';
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
                 
-                // 状态颜色
-                const statusColors = {
-                    'completed': 'success',
-                    'failed': 'danger',
-                    'stopped': 'secondary',
-                    'running': 'primary'
-                };
+                // 格式化时间
+                const startTime = new Date(task.start_time);
+                const timeStr = startTime.toLocaleDateString() + ' ' + startTime.toLocaleTimeString();
                 
-                const statusColor = statusColors[task.status] || 'secondary';
+                // 模型名称
+                const modelName = task.model_path ? task.model_path.split('/').pop() : '未命名模型';
                 
-                taskItem.innerHTML = `
-                    <div class="d-flex w-100 justify-content-between">
-                        <div>
-                            <h6 class="mb-1">${task.model_path ? task.model_path.split('/').pop() : '未命名模型'}</h6>
-                            <small class="text-muted">${task.id.substring(0, 8)}...</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-${statusColor}">${task.status}</span>
-                            <div class="mt-1">
-                                <small>${task.progress}%</small>
-                            </div>
-                        </div>
+                historyItem.innerHTML = `
+                    <div class="history-info">
+                        <h4>${modelName}</h4>
+                        <p>${timeStr} | 进度: ${task.progress}%</p>
                     </div>
-                    <small class="text-muted">
-                        <i class="bi bi-clock"></i> ${new Date(task.start_time).toLocaleString()}
-                    </small>
+                    <div class="history-status status-${task.status}">
+                        ${getStatusText(task.status)}
+                    </div>
                 `;
                 
-                taskItem.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    // 可以点击查看详情
-                    alert(`任务ID: ${task.id}\n状态: ${task.status}\n进度: ${task.progress}%`);
+                // 点击查看详情
+                historyItem.addEventListener('click', () => {
+                    alert(`任务ID: ${task.id}\n模型: ${modelName}\n状态: ${getStatusText(task.status)}\n进度: ${task.progress}%`);
                 });
                 
-                elements.taskHistory.appendChild(taskItem);
+                elements.historyList.appendChild(historyItem);
             });
         }
-
-        // 显示错误消息
-        function showError(message) {
-            elements.errorAlert.textContent = message;
-            elements.errorAlert.classList.remove('d-none');
-            elements.successAlert.classList.add('d-none');
-            
-            // 3秒后自动隐藏
-            setTimeout(() => {
-                elements.errorAlert.classList.add('d-none');
-            }, 5000);
+        
+        // 刷新历史记录
+        function refreshHistory() {
+            loadTrainingHistory();
+            addLog('训练历史已刷新', 'info');
         }
-
-        // 显示成功消息
-        function showSuccess(message) {
-            elements.successAlert.textContent = message;
-            elements.successAlert.classList.remove('d-none');
-            elements.errorAlert.classList.add('d-none');
-            
-            // 3秒后自动隐藏
-            setTimeout(() => {
-                elements.successAlert.classList.add('d-none');
-            }, 5000);
+        
+        // 应用主题系统
+        function applyThemeSystem() {
+            // 检查是否已有主题管理器
+            if (typeof applyTheme !== 'undefined') {
+                console.log('✅ 使用现有的主题管理器');
+            } else {
+                // 简单的主题支持
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                
+                // 设置主题按钮
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const theme = this.getAttribute('data-theme');
+                        document.documentElement.setAttribute('data-theme', theme);
+                        localStorage.setItem('theme', theme);
+                        
+                        // 更新按钮状态
+                        document.querySelectorAll('.theme-btn').forEach(b => {
+                            b.classList.toggle('active', b.getAttribute('data-theme') === theme);
+                        });
+                    });
+                    
+                    // 设置初始状态
+                    btn.classList.toggle('active', btn.getAttribute('data-theme') === savedTheme);
+                });
+            }
         }
-
-        // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            // 加载任务历史
-            loadTaskHistory();
-        });
     </script>
 </body>
 </html>
