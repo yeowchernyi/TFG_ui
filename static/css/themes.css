@@ -1,0 +1,120 @@
+
+/* 1. 首先定义变量在:root */
+:root {
+    /* 浅色主题 */
+    --primary-color: #4A90E2;
+    --secondary-color: #7B68EE;
+    --accent-color: #00CED1;
+    
+    --bg-color: #f8f9fa;          /* 浅灰背景 */
+    --card-bg: #ffffff;           /* 白色卡片 */
+    --text-color: #2c3e50;        /* 深灰文字 */
+    --border-color: #e0e0e0;      /* 浅灰边框 */
+    
+    --border-radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --transition: all 0.3s ease;
+    
+    --font-family: "Microsoft YaHei", sans-serif;
+    
+    /* 关键：直接设置背景色变量 */
+    background-color: var(--bg-color);
+}
+
+/* 2. data-theme属性选择器 */
+[data-theme="light"] {
+    --bg-color: #f8f9fa !important;
+    --card-bg: #ffffff !important;
+    --text-color: #2c3e50 !important;
+    --border-color: #e0e0e0 !important;
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a !important;      /* 纯黑背景 */
+    --card-bg: #2d2d2d !important;
+    --text-color: #ffffff !important;    /* 白色文字 */
+    --border-color: #404040 !important;
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="nature"] {
+    --bg-color: #f5f5dc !important;      /* 米黄背景 */
+    --card-bg: #ffffff !important;
+    --text-color: #2c3e50 !important;
+    --border-color: #bdc3c7 !important;
+    background-color: var(--bg-color) !important;
+}
+
+/* 3. 强制应用到body和html元素 */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-family, "Microsoft YaHei", sans-serif);
+    
+    /* 关键修复：直接设置背景色，不依赖变量 */
+    background-color: #f8f9fa !important; /* 默认浅色 */
+    color: #2c3e50 !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 4. 根据data-theme覆盖body背景 */
+[data-theme="dark"] body {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+}
+
+[data-theme="nature"] body {
+    background-color: #f5f5dc !important;
+    color: #2c3e50 !important;
+}
+
+/* 5. 主题控制栏样式 */
+.theme-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.theme-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-color);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.theme-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.theme-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.font-selector {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+}

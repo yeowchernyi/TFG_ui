@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>视频生成界面</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="subpage-bg">
+    <h2>视频生成界面</h2>
+    <div class="video-page-container">
+        <!-- 左边视频显示 -->
+        <div class="video-display">
+            <video id="outputVideo" controls width="420">
+                <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- 右边输入表单 -->
+        <div class="form-section">
+            <form id="videoForm">
+                <div class="form-group">
+                    <label>模型名称</label>
+                    <select name="model_name">
+                        <option value="model1">Model 1</option>
+                        <option value="model2">Model 2</option>
+                        <option value="SyncTalk">SyncTalk</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>模型目录地址</label>
+                    <input type="text" name="model_param" placeholder="请输入模型目录路径">
+                </div>
+
+                <div class="form-group">
+                    <label>参考音频地址</label>
+                    <input type="text" name="ref_audio" placeholder="请输入音频路径">
+                </div>
+                
+                <div class="form-group">
+                    <label>GPU选择</label>
+                    <select name="gpu_choice">
+                        <option value="GPU0">GPU 0</option>
+                        <option value="GPU1">GPU 1</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>目标文字（文本框）</label>
+                    <textarea name="target_text" placeholder="留空则直接使用参考音频"></textarea>
+                </div>
+
+                <button type="submit" class="generate-btn">生成视频</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('videoForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('/video_generation', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("后端返回:", data);
+                    if (data.status === 'success') {
+                        const videoEl = document.getElementById('outputVideo');
+                        const newSrc = data.video_path + '?t=' + new Date().getTime();
+                        videoEl.src = newSrc;
+                        videoEl.load();
+                        videoEl.play().catch(err => console.warn('自动播放被阻止:', err));
+                    } else {
+                        alert('视频生成失败！');
+                    }
+                })
+                .catch(err => console.error('错误:', err));
+        });
+
+    </script>
+
+</body>
+
+</html>

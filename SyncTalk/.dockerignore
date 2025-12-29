@@ -1,0 +1,14 @@
+.git
+.gitignore
+README.md
+assets/
+data/
+audio/
+model/
+adv_results/
+middl_results/
+demo/
+*.log
+__pycache__/
+*.pyc
+.DS_Store

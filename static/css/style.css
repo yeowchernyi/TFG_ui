@@ -1,0 +1,87 @@
+/* ========== 视频生成界面布局 ========== */
+.video-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 60px;
+    margin: 40px auto;
+    max-width: 1100px;
+}
+
+/* 左边视频 */
+.video-display {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-display video {
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(100, 100, 100, 0.3);
+}
+
+/* 右边表单 */
+.form-section {
+    flex: 1;
+    background-color: #f9d9c7;
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.15);
+    text-align: left;
+}
+
+.form-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+textarea {
+    height: 80px;
+    resize: none;
+}
+
+.generate-btn {
+    background-color: #f1834b;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.generate-btn:hover {
+    background-color: #e06b2f;
+}
+
+/* 页面标题通用样式 */
+h2 {
+    text-align: center;
+    font-size: 26px;
+    font-weight: 600;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    color: #333;
+}
