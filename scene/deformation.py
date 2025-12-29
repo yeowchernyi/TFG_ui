@@ -53,18 +53,17 @@ class Deformation(nn.Module):
         self.audio_net = AudioNet(self.audio_in_dim, self.audio_dim)
         self.audio_att_net = AudioAttNet(self.audio_dim)
         
-        use_kan = not getattr(args, 'no_kan', False)
-        self.audio_mlp = KAN(32, args.d_model, 64, 2, use_kan=use_kan)
+        self.audio_mlp = KAN(32, args.d_model, 64, 2)
         
         self.in_dim = 32 
-        self.aud_ch_att_net = KAN(self.in_dim, self.audio_dim, 64, 2, use_kan=use_kan)
-        self.eye_att_net = KAN(self.in_dim, 1, 16, 2, use_kan=use_kan)
+        self.aud_ch_att_net = KAN(self.in_dim, self.audio_dim, 64, 2)
+        self.eye_att_net = KAN(self.in_dim, 1, 16, 2)
         
         
-        self.eye_mlp = KAN(32, args.d_model, 64, 2, use_kan=use_kan)
-        self.cam_mlp = KAN(12, args.d_model, 64, 2, use_kan=use_kan)
+        self.eye_mlp = KAN(32, args.d_model, 64, 2)
+        self.cam_mlp = KAN(12, args.d_model, 64, 2)
         self.null_vector = nn.Parameter(torch.randn(1, 1, args.d_model))
-        self.enc_x_mlp = KAN(32, args.d_model, 64, 2, use_kan=use_kan)
+        self.enc_x_mlp = KAN(32, args.d_model, 64, 2)
         
     @property
     def get_aabb(self):
@@ -210,12 +209,7 @@ class Deformation(nn.Module):
 
         enc_source = torch.cat([enc_a,enc_eye,self.null_vector],dim = 1) # 1, 3, dim
         
-        if getattr(self.args, 'no_esaa', False):
-            # Simple fusion
-            x = enc_x + enc_source.mean(dim=1, keepdim=True)
-            attention = torch.zeros(1, self.args.n_layer, 1, enc_x.shape[1], device=x.device)
-        else:
-            x, attention = self.transformer(enc_x, enc_source) # 1, N, dim
+        x, attention = self.transformer(enc_x, enc_source) # 1, N, dim
         
         x = x.squeeze()
         

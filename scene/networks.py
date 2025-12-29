@@ -70,7 +70,7 @@ except ImportError:
     KANLinear = nn.Linear
 
 class KAN(nn.Module):   #KAN
-    def __init__(self, dim_in, dim_out, dim_hidden, num_layers, use_kan=True):
+    def __init__(self, dim_in, dim_out, dim_hidden, num_layers):
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
@@ -79,27 +79,12 @@ class KAN(nn.Module):   #KAN
 
         net = []
         for l in range(num_layers):
-            if use_kan:
-                net.append(KANLinear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
-            else:
-                net.append(nn.Linear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
+            net.append(KANLinear(self.dim_in if l == 0 else self.dim_hidden, self.dim_out if l == num_layers - 1 else self.dim_hidden))
         self.net = nn.ModuleList(net)
     
     def forward(self, x):
         #print("KAN Input shape:", x.shape)  # 打印输入值的形状
         for l in range(self.num_layers):
             x = self.net[l](x)
-            if l != self.num_layers - 1:
-                # Only apply ReLU if using nn.Linear (KAN usually has its own activation or doesn't need it in the same way, but let's keep it consistent with previous code if it was MLP)
-                # Wait, if it was MLP, it had ReLU. If it is KAN, does it need ReLU?
-                # TaylorKAN usually includes activation.
-                # But let's assume if use_kan is True, we might not need ReLU or KANLinear handles it.
-                # However, the previous code had `x = F.relu(x)` for the MLP version.
-                # If I switch to KANLinear, I should probably check if it needs external activation.
-                # Assuming KANLinear is self-contained or we follow the paper.
-                # But for safety, if use_kan is False (MLP), we definitely need ReLU.
-                if isinstance(self.net[l], nn.Linear):
-                    x = F.relu(x, inplace=True)
-                # If KAN, usually no extra ReLU between layers as KAN has activation on edges.
         #print("KAN Output shape:", x.shape)  # 打印返回值的形状        
         return x
