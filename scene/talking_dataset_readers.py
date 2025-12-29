@@ -237,6 +237,16 @@ def readCamerasFromTracksTransforms(path, meshfile, transformsfile, aud_features
         
     if custom_aud:
         auds = aud_features
+        # Extend frames to match audio length
+        num_audio_frames = auds.shape[0]
+        num_video_frames = len(frames)
+        if num_audio_frames > num_video_frames:
+            print(f"Extending video frames from {num_video_frames} to {num_audio_frames} to match custom audio.")
+            repeats = num_audio_frames // num_video_frames + 1
+            frames = (frames * repeats)[:num_audio_frames]
+        elif num_audio_frames < num_video_frames:
+            print(f"Truncating video frames from {num_video_frames} to {num_audio_frames} to match custom audio.")
+            frames = frames[:num_audio_frames]
     else:    
         auds = [aud_features[min(frame['aud_id'], aud_features.shape[0] - 1)] for frame in frames]
         auds = torch.stack(auds, dim=0)
