@@ -10,6 +10,7 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
         }
         
         .navbar-brand {
@@ -20,27 +21,28 @@
         .page-header {
             background: linear-gradient(135deg, #4A90E2, #7B68EE);
             color: white;
-            padding: 50px 0;
-            margin-bottom: 40px;
+            padding: 40px 0;
+            margin-bottom: 30px;
             border-radius: 0 0 20px 20px;
         }
         
         .inference-panel {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
             border: 1px solid #e0e0e0;
         }
         
         .model-card {
             background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 15px;
             border: 2px solid transparent;
             cursor: pointer;
             transition: all 0.3s ease;
+            height: 100%;
         }
         
         .model-card:hover {
@@ -53,37 +55,71 @@
             background: rgba(74, 144, 226, 0.1);
         }
         
-        .audio-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-top: 20px;
-        }
-        
         .btn-primary {
             background: linear-gradient(135deg, #4A90E2, #7B68EE);
             border: none;
-            padding: 12px 30px;
+            padding: 10px 25px;
             font-weight: 600;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
         .video-preview {
             width: 100%;
             max-width: 600px;
             margin: 20px auto;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
+        .audio-waveform {
+            height: 100px;
+            background: linear-gradient(90deg, #4A90E2, #7B68EE);
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #e74c3c;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .alert-info {
+            border-left: 4px solid #4A90E2;
+        }
+        
+        #resultContainer {
+            transition: all 0.3s ease;
         }
     </style>
 </head>
@@ -97,10 +133,8 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="/">首页</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/chat_system">人机对话</a></li>
                     <li class="nav-item"><a class="nav-link" href="/model_training">模型训练</a></li>
                     <li class="nav-item"><a class="nav-link active" href="/inference">模型推理</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/video_generation">视频生成</a></li>
                 </ul>
             </div>
         </div>
@@ -109,19 +143,27 @@
     <!-- 页面标题 -->
     <header class="page-header text-center">
         <div class="container">
-            <h1 class="display-4 fw-bold mb-3">模型推理测试</h1>
+            <h1 class="display-5 fw-bold mb-3">模型推理测试</h1>
             <p class="lead mb-0">使用训练好的模型生成语音驱动的人脸动画</p>
         </div>
     </header>
     
     <!-- 推理界面 -->
     <main class="container">
+        <!-- 提示信息 -->
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>使用提示：</strong> 
+            请使用 <strong>Chrome 或 Edge 浏览器</strong>，并确保访问地址为 
+            <code>http://localhost:5001</code> 以启用麦克风功能。
+        </div>
+        
         <!-- 选择模型 -->
         <div class="inference-panel">
-            <h2><i class="fas fa-robot"></i> 选择训练好的模型</h2>
-            <div id="modelList" class="row mt-3">
+            <h2><i class="fas fa-robot me-2"></i>选择训练好的模型</h2>
+            <div id="modelList" class="row mt-3 g-3">
                 <!-- 模型列表会动态加载 -->
-                <div class="col-12 text-center py-5">
+                <div class="col-12 text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">加载中...</span>
                     </div>
@@ -132,26 +174,65 @@
         
         <!-- 输入音频 -->
         <div class="inference-panel">
-            <h2><i class="fas fa-microphone"></i> 输入音频</h2>
+            <h2><i class="fas fa-microphone me-2"></i>输入音频</h2>
             <div class="mt-3">
-                <div class="audio-controls">
-                    <input type="file" id="audioFile" accept="audio/*" style="display: none;">
-                    <button class="btn btn-primary" onclick="document.getElementById('audioFile').click()">
-                        <i class="fas fa-file-audio"></i> 选择音频文件
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="startRecording()" id="recordBtn">
-                        <i class="fas fa-microphone"></i> 开始录音
-                    </button>
-                    <span id="audioStatus" class="text-muted">未选择音频</span>
+                <!-- 音频上传 -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">上传音频文件</label>
+                    <div class="input-group">
+                        <input type="file" class="form-control" id="audioFile" accept="audio/*">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('audioFile').click()">
+                            <i class="fas fa-upload"></i> 选择文件
+                        </button>
+                    </div>
+                    <div class="form-text">支持 WAV、MP3 格式，建议时长 5-30 秒</div>
                 </div>
-                <audio id="audioPreview" controls class="mt-3 w-100" style="display: none;"></audio>
+                
+                <!-- 或录音 -->
+                <div class="mt-4">
+                    <label class="form-label fw-bold">或直接录音</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button class="btn btn-primary" id="recordBtn" onclick="toggleRecording()">
+                            <i class="fas fa-microphone"></i> 开始录音
+                        </button>
+                        <span id="recordStatus" class="text-muted">点击按钮开始录音</span>
+                    </div>
+                    
+                    <!-- 录音指示器 -->
+                    <div class="recording-indicator" id="recordingIndicator">
+                        <div class="pulse-dot"></div>
+                        <span>录音中... 点击停止按钮结束</span>
+                        <span id="recordingTimer" class="ms-auto">00:00</span>
+                    </div>
+                    
+                    <!-- 音频波形（模拟） -->
+                    <div class="audio-waveform" id="audioWaveform">
+                        <div class="wave-bars"></div>
+                    </div>
+                    
+                    <div class="form-text">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        录音功能需要在 localhost 环境下使用 Chrome/Edge 浏览器
+                    </div>
+                </div>
+                
+                <!-- 音频预览 -->
+                <div class="mt-3" id="audioPreviewContainer" style="display: none;">
+                    <label class="form-label fw-bold">音频预览</label>
+                    <audio id="audioPreview" controls class="w-100"></audio>
+                    <div class="mt-2 text-end">
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearAudio()">
+                            <i class="fas fa-trash"></i> 清除音频
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
         <!-- 生成设置 -->
         <div class="inference-panel">
-            <h2><i class="fas fa-cogs"></i> 生成设置</h2>
-            <div class="row mt-3">
+            <h2><i class="fas fa-cogs me-2"></i>生成设置</h2>
+            <div class="row mt-3 g-3">
                 <div class="col-md-6">
                     <label class="form-label">生成质量</label>
                     <select id="quality" class="form-select">
@@ -161,46 +242,77 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">渲染模式</label>
-                    <select id="renderMode" class="form-select">
-                        <option value="standard">标准渲染</option>
-                        <option value="incremental" selected>增量渲染 (内存优化)</option>
-                        <option value="chunked">分块渲染 (超大文件)</option>
+                    <label class="form-label">输出格式</label>
+                    <select id="format" class="form-select">
+                        <option value="mp4" selected>MP4视频</option>
+                        <option value="gif">GIF动画</option>
                     </select>
                 </div>
             </div>
         </div>
         
-        <!-- 生成按钮和结果 -->
-        <div class="text-center my-5">
-            <button class="btn btn-primary btn-lg px-5 py-3" onclick="generateVideo()">
+        <!-- 生成按钮 -->
+        <div class="text-center my-4">
+            <button class="btn btn-primary btn-lg px-5 py-3" id="generateBtn" onclick="generateVideo()">
                 <i class="fas fa-play-circle me-2"></i> 生成动画视频
             </button>
-            
-            <div id="resultContainer" class="mt-4" style="display: none;">
-                <h3 class="mb-4">生成结果</h3>
-                <div id="videoResult" class="video-preview">
-                    <!-- 生成的视频会显示在这里 -->
-                </div>
-                <div id="resultInfo" class="mt-3 text-muted"></div>
+        </div>
+        
+        <!-- 结果区域 -->
+        <div id="resultContainer" class="inference-panel" style="display: none;">
+            <h2><i class="fas fa-video me-2"></i>生成结果</h2>
+            <div id="videoResult" class="video-preview mt-3">
+                <!-- 生成的视频会显示在这里 -->
             </div>
+            <div id="resultInfo" class="mt-3"></div>
         </div>
     </main>
     
     <script>
-        // 全局变量
+        // ========== 全局变量 ==========
         let selectedModel = null;
         let audioBlob = null;
         let mediaRecorder = null;
         let audioChunks = [];
+        let isRecording = false;
+        let recordingStartTime = null;
+        let recordingTimer = null;
         
-        // 页面加载
+        // ========== 页面初始化 ==========
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('模型推理页面加载完成');
+            
+            // 检测浏览器兼容性
+            checkBrowserCompatibility();
+            
+            // 加载可用模型
             loadAvailableModels();
+            
+            // 初始化音频上传
             setupAudioUpload();
+            
+            // 初始化录音按钮状态
+            updateRecordButton();
         });
         
-        // 加载可用模型
+        // ========== 浏览器兼容性检查 ==========
+        function checkBrowserCompatibility() {
+            const micSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            
+            if (!micSupported) {
+                document.getElementById('recordBtn').disabled = true;
+                document.getElementById('recordStatus').innerHTML = 
+                    '<span class="text-danger">浏览器不支持麦克风功能</span>';
+                
+                // 显示提示
+                showAlert('warning', 
+                    '您的浏览器不支持录音功能，请使用 Chrome 或 Edge 浏览器，并确保访问地址为 http://localhost:5001');
+            }
+            
+            return micSupported;
+        }
+        
+        // ========== 模型加载 ==========
         async function loadAvailableModels() {
             try {
                 const response = await fetch('/api/models/list');
@@ -212,6 +324,9 @@
                     modelList.innerHTML = '';
                     
                     data.models.forEach(model => {
+                        // 跳过指导性项目
+                        if (model.instructions) return;
+                        
                         const col = document.createElement('div');
                         col.className = 'col-md-4 mb-3';
                         
@@ -224,36 +339,48 @@
                                 <p class="text-muted small mb-2">
                                     <i class="fas fa-hdd"></i> ${model.size}
                                 </p>
-                                <span class="badge bg-success">训练完成</span>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-success">可用</span>
+                                    <small class="text-primary">点击选择</small>
+                                </div>
                             </div>
                         `;
                         
-                        col.querySelector('.model-card').addEventListener('click', function() {
-                            // 移除其他卡片的选中状态
-                            document.querySelectorAll('.model-card').forEach(card => {
-                                card.classList.remove('selected');
-                            });
-                            // 选中当前卡片
-                            this.classList.add('selected');
-                            selectedModel = this.getAttribute('data-path');
-                            console.log('选择模型:', selectedModel);
+                        const modelCard = col.querySelector('.model-card');
+                        modelCard.addEventListener('click', function() {
+                            selectModelCard(this);
                         });
                         
                         modelList.appendChild(col);
                     });
+                    
+                    // 如果没有模型
+                    if (modelList.children.length === 0) {
+                        modelList.innerHTML = `
+                            <div class="col-12 text-center py-4">
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <h5>没有找到可用的模型</h5>
+                                <p class="text-muted">
+                                    请先到<a href="/model_training" class="text-primary">模型训练</a>页面训练一个模型
+                                </p>
+                            </div>
+                        `;
+                    }
                 } else {
                     modelList.innerHTML = `
-                        <div class="col-12 text-center py-5">
+                        <div class="col-12 text-center py-4">
                             <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                             <h5>没有找到训练好的模型</h5>
-                            <p class="text-muted">请先到<a href="/model_training">模型训练</a>页面训练一个模型</p>
+                            <p class="text-muted">
+                                请先到<a href="/model_training" class="text-primary">模型训练</a>页面训练一个模型
+                            </p>
                         </div>
                     `;
                 }
             } catch (error) {
                 console.error('加载模型失败:', error);
                 document.getElementById('modelList').innerHTML = `
-                    <div class="col-12 text-center py-5">
+                    <div class="col-12 text-center py-4">
                         <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
                         <h5>加载失败</h5>
                         <p class="text-muted">${error.message}</p>
@@ -262,99 +389,299 @@
             }
         }
         
-        // 设置音频上传
+        function selectModelCard(card) {
+            // 移除其他卡片的选中状态
+            document.querySelectorAll('.model-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // 选中当前卡片
+            card.classList.add('selected');
+            selectedModel = card.getAttribute('data-path');
+            
+            console.log('选择模型:', selectedModel);
+            showAlert('success', `已选择模型: ${card.querySelector('h5').textContent}`);
+        }
+        
+        // ========== 音频上传 ==========
         function setupAudioUpload() {
             const audioFile = document.getElementById('audioFile');
-            const audioStatus = document.getElementById('audioStatus');
             const audioPreview = document.getElementById('audioPreview');
+            const previewContainer = document.getElementById('audioPreviewContainer');
             
             audioFile.addEventListener('change', function(e) {
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
+                    
+                    // 验证文件类型
+                    if (!file.type.startsWith('audio/')) {
+                        showAlert('danger', '请选择音频文件！');
+                        return;
+                    }
+                    
+                    // 验证文件大小（限制为20MB）
+                    if (file.size > 20 * 1024 * 1024) {
+                        showAlert('danger', '文件过大，请选择小于20MB的音频文件');
+                        return;
+                    }
+                    
                     audioBlob = file;
                     
+                    // 显示文件信息
                     const fileSize = (file.size / 1024 / 1024).toFixed(2);
-                    audioStatus.textContent = `${file.name} (${fileSize} MB)`;
-                    audioStatus.className = 'text-success';
+                    showAlert('success', `已选择音频: ${file.name} (${fileSize} MB)`);
                     
+                    // 显示预览
                     audioPreview.src = URL.createObjectURL(file);
-                    audioPreview.style.display = 'block';
+                    previewContainer.style.display = 'block';
+                    
+                    // 如果正在录音，停止录音
+                    if (isRecording) {
+                        stopRecording();
+                    }
                 }
             });
         }
         
-        // 录音功能
-        async function startRecording() {
-            const recordBtn = document.getElementById('recordBtn');
-            const audioStatus = document.getElementById('audioStatus');
-            const audioPreview = document.getElementById('audioPreview');
-            
-            if (recordBtn.textContent.includes('开始录音')) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-                    
-                    mediaRecorder.onstop = () => {
-                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        
-                        const duration = audioChunks.length * 0.1;
-                        audioStatus.textContent = `录音完成 (${duration.toFixed(1)}秒)`;
-                        audioStatus.className = 'text-success';
-                        
-                        audioPreview.src = URL.createObjectURL(audioBlob);
-                        audioPreview.style.display = 'block';
-                    };
-                    
-                    mediaRecorder.start();
-                    recordBtn.innerHTML = '<i class="fas fa-stop-circle"></i> 停止录音';
-                    audioStatus.textContent = '录音中...';
-                    audioStatus.className = 'text-danger';
-                    
-                } catch (error) {
-                    alert('无法访问麦克风: ' + error.message);
-                }
+        // ========== 录音功能（修复版） ==========
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
             } else {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    recordBtn.innerHTML = '<i class="fas fa-microphone"></i> 开始录音';
+                startRecording();
+            }
+        }
+        
+        async function startRecording() {
+            // 检查浏览器兼容性
+            if (!checkBrowserCompatibility()) {
+                showAlert('warning', '您的浏览器不支持录音功能');
+                return;
+            }
+            
+            try {
+                // 请求麦克风权限
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    }
+                });
+                
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // 创建音频Blob
+                    audioBlob = new Blob(audioChunks, { 
+                        type: 'audio/wav' 
+                    });
+                    
+                    // 停止所有轨道
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // 显示音频预览
+                    const audioPreview = document.getElementById('audioPreview');
+                    const previewContainer = document.getElementById('audioPreviewContainer');
+                    
+                    audioPreview.src = URL.createObjectURL(audioBlob);
+                    previewContainer.style.display = 'block';
+                    
+                    // 显示成功消息
+                    const duration = (Date.now() - recordingStartTime) / 1000;
+                    showAlert('success', `录音完成！时长: ${duration.toFixed(1)}秒`);
+                    
+                    // 清除文件上传
+                    document.getElementById('audioFile').value = '';
+                };
+                
+                // 开始录音
+                mediaRecorder.start();
+                isRecording = true;
+                recordingStartTime = Date.now();
+                
+                // 更新UI
+                updateRecordButton();
+                document.getElementById('recordingIndicator').style.display = 'flex';
+                document.getElementById('audioWaveform').style.display = 'block';
+                
+                // 开始计时器
+                startRecordingTimer();
+                
+                // 模拟音频波形
+                simulateAudioWaveform();
+                
+                console.log('开始录音...');
+                
+            } catch (error) {
+                console.error('录音失败:', error);
+                
+                if (error.name === 'NotAllowedError') {
+                    showAlert('danger', '麦克风权限被拒绝。请检查浏览器设置。');
+                } else if (error.name === 'NotFoundError') {
+                    showAlert('danger', '找不到麦克风设备。请检查设备连接。');
+                } else {
+                    showAlert('danger', `录音失败: ${error.message}`);
                 }
             }
         }
         
-        // 生成视频
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // 更新UI
+                updateRecordButton();
+                document.getElementById('recordingIndicator').style.display = 'none';
+                document.getElementById('audioWaveform').style.display = 'none';
+                
+                // 停止计时器
+                stopRecordingTimer();
+                
+                console.log('停止录音');
+            }
+        }
+        
+        function updateRecordButton() {
+            const recordBtn = document.getElementById('recordBtn');
+            const recordStatus = document.getElementById('recordStatus');
+            
+            if (isRecording) {
+                recordBtn.innerHTML = '<i class="fas fa-stop-circle"></i> 停止录音';
+                recordBtn.className = 'btn btn-danger';
+                recordStatus.innerHTML = '<span class="text-danger">录音中...</span>';
+            } else {
+                recordBtn.innerHTML = '<i class="fas fa-microphone"></i> 开始录音';
+                recordBtn.className = 'btn btn-primary';
+                recordStatus.textContent = '点击按钮开始录音';
+            }
+        }
+        
+        function startRecordingTimer() {
+            const timerElement = document.getElementById('recordingTimer');
+            recordingStartTime = Date.now();
+            
+            recordingTimer = setInterval(() => {
+                const elapsed = Date.now() - recordingStartTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const displaySeconds = seconds % 60;
+                
+                timerElement.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        function stopRecordingTimer() {
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+        }
+        
+        function simulateAudioWaveform() {
+            const waveform = document.getElementById('audioWaveform');
+            const bars = waveform.querySelector('.wave-bars') || document.createElement('div');
+            bars.className = 'wave-bars';
+            bars.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+                height: 100%;
+                width: 100%;
+                padding: 0 10px;
+            `;
+            
+            // 创建音频条
+            bars.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.style.cssText = `
+                    width: 4px;
+                    background: white;
+                    border-radius: 2px;
+                    animation: wave ${Math.random() * 0.5 + 0.3}s infinite alternate;
+                    animation-delay: ${i * 0.05}s;
+                `;
+                bar.style.height = `${Math.random() * 60 + 20}%`;
+                bars.appendChild(bar);
+            }
+            
+            waveform.appendChild(bars);
+            
+            // 添加动画样式
+            if (!document.querySelector('#wave-animation')) {
+                const style = document.createElement('style');
+                style.id = 'wave-animation';
+                style.textContent = `
+                    @keyframes wave {
+                        from { height: 20%; }
+                        to { height: 80%; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // ========== 音频管理 ==========
+        function clearAudio() {
+            audioBlob = null;
+            document.getElementById('audioFile').value = '';
+            document.getElementById('audioPreviewContainer').style.display = 'none';
+            document.getElementById('audioPreview').src = '';
+            
+            if (isRecording) {
+                stopRecording();
+            }
+            
+            showAlert('info', '已清除音频');
+        }
+        
+        // ========== 视频生成 ==========
         async function generateVideo() {
+            // 验证输入
             if (!selectedModel) {
-                alert('请先选择一个模型');
+                showAlert('warning', '请先选择一个模型');
                 return;
             }
             
             if (!audioBlob) {
-                alert('请先上传或录制音频');
+                showAlert('warning', '请先上传或录制音频');
                 return;
             }
             
-            // 显示加载状态
+            // 禁用生成按钮
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+            generateBtn.disabled = true;
+            
+            // 显示结果容器
             const resultContainer = document.getElementById('resultContainer');
             const videoResult = document.getElementById('videoResult');
             const resultInfo = document.getElementById('resultInfo');
             
             videoResult.innerHTML = `
                 <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                         <span class="visually-hidden">加载中...</span>
                     </div>
-                    <p class="mt-3">正在生成视频...</p>
-                    <p class="text-muted small">这可能需要几分钟时间</p>
+                    <h5 class="mt-3">正在生成视频...</h5>
+                    <p class="text-muted">模型处理中，请稍候</p>
+                    <div class="progress mt-3" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
                 </div>
             `;
+            
             resultContainer.style.display = 'block';
-            resultInfo.textContent = '正在处理...';
+            resultInfo.innerHTML = '';
             
             try {
                 // 上传音频文件和配置
@@ -362,7 +689,9 @@
                 formData.append('audio', audioBlob, 'input.wav');
                 formData.append('model_path', selectedModel);
                 formData.append('quality', document.getElementById('quality').value);
-                formData.append('render_mode', document.getElementById('renderMode').value);
+                formData.append('format', document.getElementById('format').value);
+                
+                console.log('发送推理请求...');
                 
                 // 发送请求
                 const response = await fetch('/api/inference/generate', {
@@ -371,11 +700,12 @@
                 });
                 
                 const data = await response.json();
+                console.log('推理响应:', data);
                 
                 if (data.success) {
                     // 显示生成的视频
                     videoResult.innerHTML = `
-                        <video controls autoplay class="w-100" style="border-radius: 10px;">
+                        <video controls autoplay muted class="w-100" style="border-radius: 8px;">
                             <source src="${data.video_url}" type="video/mp4">
                             您的浏览器不支持视频标签。
                         </video>
@@ -383,20 +713,41 @@
                     
                     resultInfo.innerHTML = `
                         <div class="alert alert-success">
-                            <h5><i class="fas fa-check-circle"></i> 视频生成成功！</h5>
-                            <p class="mb-1">文件: ${data.filename}</p>
-                            <p class="mb-1">大小: ${data.size}</p>
-                            <p class="mb-3">用时: ${data.processing_time}秒</p>
-                            <a href="${data.video_url}" download class="btn btn-primary">
-                                <i class="fas fa-download"></i> 下载视频
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="mb-1">视频生成成功！</h5>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">文件大小</small>
+                                            <div class="fw-bold">${data.size}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">处理时间</small>
+                                            <div class="fw-bold">${data.processing_time}秒</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="${data.video_url}" download="${data.filename}" class="btn btn-primary me-2">
+                                    <i class="fas fa-download"></i> 下载视频
+                                </a>
+                                <button class="btn btn-outline-primary" onclick="playVideo()">
+                                    <i class="fas fa-play"></i> 重新播放
+                                </button>
+                            </div>
                         </div>
                     `;
                     
                     // 自动播放视频
                     setTimeout(() => {
                         const video = videoResult.querySelector('video');
-                        if (video) video.play();
+                        if (video) {
+                            video.play().catch(e => {
+                                console.log('自动播放被阻止，需要用户交互:', e);
+                            });
+                        }
                     }, 500);
                     
                 } else {
@@ -405,21 +756,106 @@
                             <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
                             <h5>生成失败</h5>
                             <p>${data.error || '未知错误'}</p>
+                            ${data.details ? `
+                                <details class="mt-3 text-start">
+                                    <summary class="btn btn-sm btn-outline-danger">查看详情</summary>
+                                    <pre class="mt-2 p-3 bg-dark text-light rounded" style="font-size: 12px;">${data.details}</pre>
+                                </details>
+                            ` : ''}
                         </div>
                     `;
-                    resultInfo.textContent = '';
                 }
+                
             } catch (error) {
+                console.error('生成视频失败:', error);
                 videoResult.innerHTML = `
-                    <div class="alert alert-warning text-center py-5">
+                    <div class="alert alert-danger text-center py-5">
                         <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
                         <h5>请求失败</h5>
                         <p>${error.message}</p>
+                        <p class="text-muted small mt-2">请检查网络连接或服务器状态</p>
                     </div>
                 `;
-                resultInfo.textContent = '';
+                
+            } finally {
+                // 恢复生成按钮
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
             }
         }
+        
+        function playVideo() {
+            const video = document.querySelector('#videoResult video');
+            if (video) {
+                video.currentTime = 0;
+                video.play();
+            }
+        }
+        
+        // ========== 辅助函数 ==========
+        function showAlert(type, message) {
+            // 移除现有提示
+            const existingAlert = document.querySelector('.alert-toast');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // 创建新提示
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-toast`;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+            `;
+            
+            alert.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${getAlertIcon(type)} me-2"></i>
+                    <div>${message}</div>
+                    <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 3000);
+            
+            // 添加动画样式
+            if (!document.querySelector('#alert-animation')) {
+                const style = document.createElement('style');
+                style.id = 'alert-animation';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        function getAlertIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'danger': return 'exclamation-circle';
+                case 'info': return 'info-circle';
+                default: return 'info-circle';
+            }
+        }
+        
+        // 显示麦克风使用提示
+        showAlert('info', '录音功能需要在 localhost 环境下使用 Chrome/Edge 浏览器');
     </script>
 </body>
 </html>
