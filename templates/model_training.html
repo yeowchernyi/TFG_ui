@@ -107,19 +107,43 @@
             background: rgba(74, 144, 226, 0.05);
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
         }
-        
+
         .upload-area:hover {
             background: rgba(74, 144, 226, 0.1);
             border-color: var(--secondary-color);
         }
-        
+
+        .upload-area.dragover {
+            background: rgba(123, 104, 238, 0.15);
+            border-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+
         .upload-icon {
             font-size: 3em;
             color: var(--primary-color);
             margin-bottom: 15px;
         }
-        
+
+        /* 文件输入隐藏但可点击 */
+        .file-input-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .file-input-wrapper input {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
         /* 状态指示器 */
         .status-indicator {
             display: flex;
@@ -130,11 +154,11 @@
             background: #f8f9fa;
             margin-bottom: 20px;
         }
-        
+
         [data-theme="dark"] .status-indicator {
             background: #363636;
         }
-        
+
         .status-icon {
             width: 50px;
             height: 50px;
@@ -145,28 +169,28 @@
             font-size: 1.5em;
             color: white;
         }
-        
+
         .status-ready .status-icon { background: var(--success-color); }
         .status-running .status-icon { background: var(--primary-color); animation: pulse 2s infinite; }
         .status-completed .status-icon { background: var(--success-color); }
         .status-failed .status-icon { background: var(--danger-color); }
         .status-stopped .status-icon { background: var(--warning-color); }
-        
+
         /* 进度条 */
         .progress-container {
             margin: 25px 0;
         }
-        
+
         .progress {
             height: 12px;
             border-radius: 6px;
         }
-        
+
         .progress-bar {
             background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
             border-radius: 6px;
         }
-        
+
         /* 日志容器 */
         .log-container {
             background: #1e1e1e;
@@ -178,7 +202,7 @@
             font-size: 13px;
             line-height: 1.5;
         }
-        
+
         .log-line {
             color: #d4d4d4;
             margin-bottom: 5px;
@@ -187,32 +211,32 @@
             border-left: 3px solid transparent;
             padding-left: 10px;
         }
-        
+
         .log-line.info { border-color: #569cd6; }
         .log-line.warning { border-color: #ffd700; }
         .log-line.error { border-color: #f44747; }
         .log-line.success { border-color: #6a9955; }
-        
+
         /* 配置标签页 */
         .config-tabs .nav-link {
             color: #7f8c8d;
             border: none;
             padding: 10px 20px;
         }
-        
+
         .config-tabs .nav-link.active {
             color: var(--primary-color);
             border-bottom: 3px solid var(--primary-color);
             background: transparent;
         }
-        
+
         .tab-content {
             padding: 20px;
             border: 1px solid #dee2e6;
             border-top: none;
             border-radius: 0 0 8px 8px;
         }
-        
+
         /* 按钮样式 */
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -220,66 +244,66 @@
             padding: 12px 30px;
             font-weight: 600;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
         }
-        
+
         /* 动画 */
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
             100% { opacity: 1; }
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .fade-in { animation: fadeIn 0.5s ease; }
-        
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .page-header h1 { font-size: 2em; }
             .config-panel { padding: 15px; }
             .panel-title { font-size: 1.2em; }
         }
-        
+
         /* 高级配置样式 */
         .config-group {
             margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .config-group-title {
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 15px;
             font-size: 1.1em;
         }
-        
+
         [data-theme="dark"] .config-group-title {
             color: #ffffff;
         }
-        
+
         .config-item {
             margin-bottom: 15px;
         }
-        
+
         .config-label {
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
             color: #5a6268;
         }
-        
+
         [data-theme="dark"] .config-label {
             color: #b0b0b0;
         }
-        
+
         .config-input, .config-select {
             width: 100%;
             padding: 10px 15px;
@@ -290,44 +314,44 @@
             color: #495057;
             transition: all 0.3s ease;
         }
-        
+
         [data-theme="dark"] .config-input,
         [data-theme="dark"] .config-select {
             background: #363636;
             border-color: #404040;
             color: #ffffff;
         }
-        
+
         .config-input:focus, .config-select:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
         }
-        
+
         .form-switch .form-check-input:checked {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
-        
+
         .array-editor {
             background: #f8f9fa;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 15px;
         }
-        
+
         [data-theme="dark"] .array-editor {
             background: #363636;
             border-color: #404040;
         }
-        
+
         .array-item {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
         }
-        
+
         /* 历史记录 */
         .history-item {
             display: flex;
@@ -337,31 +361,31 @@
             border-bottom: 1px solid #e0e0e0;
             transition: background 0.3s ease;
         }
-        
+
         [data-theme="dark"] .history-item {
             border-color: #404040;
         }
-        
+
         .history-item:hover {
             background: #f8f9fa;
         }
-        
+
         [data-theme="dark"] .history-item:hover {
             background: #363636;
         }
-        
+
         .history-status {
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.85em;
             font-weight: 600;
         }
-        
+
         .status-completed { background: #d5f4e6; color: var(--success-color); }
         .status-running { background: #e3f2fd; color: var(--primary-color); }
         .status-failed { background: #ffebee; color: var(--danger-color); }
         .status-stopped { background: #fff3cd; color: var(--warning-color); }
-        
+
         /* JSON预览 */
         #configJsonPreview {
             background: #f5f5f5;
@@ -372,7 +396,7 @@
             max-height: 300px;
             overflow: auto;
         }
-        
+
         [data-theme="dark"] #configJsonPreview {
             background: #2d2d2d;
             color: #d4d4d4;
@@ -442,32 +466,35 @@
                         </div>
                         <h2 class="panel-title">训练配置</h2>
                     </div>
-                    
-                    <!-- 视频上传 -->
+
+                    <!-- 视频上传 - 修复版本 -->
                     <div class="mb-4">
                         <label class="form-label fw-bold mb-3">
                             <i class="fas fa-video me-2"></i>训练视频
                         </label>
                         <div class="upload-area" id="uploadArea">
-                            <input type="file" id="videoFile" accept="video/*" style="display: none;">
+                            <!-- 修复：添加可点击的文件输入 -->
+                            <div class="file-input-wrapper">
+                                <input type="file" id="videoFile" accept="video/*">
+                            </div>
                             <div class="upload-icon">
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <div class="mb-2">点击或拖拽上传训练视频</div>
+                            <div class="mb-2" id="uploadText">点击或拖拽上传训练视频</div>
                             <div class="text-muted small">支持 MP4、AVI、MOV 格式，建议时长 1-5 分钟</div>
                         </div>
                         <div class="upload-preview mt-3" id="uploadPreview"></div>
                     </div>
-                    
+
                     <!-- 模型名称 -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">
                             <i class="fas fa-robot me-2"></i>模型名称
                         </label>
-                        <input type="text" class="form-control" id="modelName" 
+                        <input type="text" class="form-control" id="modelName"
                                placeholder="例如: my_face_model" value="my_model">
                     </div>
-                    
+
                     <!-- 训练参数 -->
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -483,12 +510,12 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <!-- 高级选项 -->
                     <div class="accordion mb-4" id="basicOptions">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" 
+                                <button class="accordion-button collapsed" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#collapseBasic">
                                     <i class="fas fa-tools me-2"></i>基本选项
                                 </button>
@@ -507,18 +534,21 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 控制按钮 -->
                     <div class="d-grid gap-2">
-                        <button class="btn btn-primary btn-lg" id="startBtn" onclick="startTraining()">
+                        <button class="btn btn-primary btn-lg" id="startBtn">
                             <i class="fas fa-play me-2"></i>开始训练
                         </button>
-                        <button class="btn btn-danger btn-lg" id="stopBtn" onclick="stopTraining()" disabled>
+                        <button class="btn btn-danger btn-lg" id="stopBtn" disabled>
                             <i class="fas fa-stop me-2"></i>停止训练
+                        </button>
+                        <button class="btn btn-outline-warning mt-2" id="debugBtn">
+                            <i class="fas fa-bug me-2"></i>调试上传
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- 高级配置面板 -->
                 <div class="config-panel fade-in mt-4">
                     <div class="panel-header">
@@ -527,51 +557,51 @@
                         </div>
                         <h2 class="panel-title">高级模型配置</h2>
                     </div>
-                    
+
                     <!-- 配置工具栏 -->
                     <div class="mb-4">
                         <label class="form-label fw-bold mb-3">训练预设</label>
                         <div class="d-flex gap-2 mb-3">
-                            <select class="form-select" id="trainingPreset" onchange="applyTrainingPreset()">
+                            <select class="form-select" id="trainingPreset">
                                 <option value="quick">快速训练 (5k迭代)</option>
                                 <option value="balanced">平衡训练 (15k迭代)</option>
                                 <option value="quality" selected>高质量 (30k迭代)</option>
                                 <option value="research">研究模式 (50k迭代)</option>
                                 <option value="custom">自定义配置</option>
                             </select>
-                            <button class="btn btn-outline-primary" onclick="saveCurrentConfig()">
+                            <button class="btn btn-outline-primary" id="saveConfigBtn">
                                 <i class="fas fa-save"></i>
                             </button>
                         </div>
-                        
+
                         <div id="presetInfo" class="alert alert-info" style="display: none;">
                             <i class="fas fa-info-circle me-2"></i>
                             <span id="presetDescription"></span>
                         </div>
                     </div>
-                    
+
                     <!-- 配置标签页 -->
                     <ul class="nav nav-tabs config-tabs" id="configTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="model-tab" data-bs-toggle="tab" 
+                            <button class="nav-link active" id="model-tab" data-bs-toggle="tab"
                                     data-bs-target="#model-tab-pane" type="button" role="tab">
                                 模型架构
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="optimization-tab" data-bs-toggle="tab" 
+                            <button class="nav-link" id="optimization-tab" data-bs-toggle="tab"
                                     data-bs-target="#optimization-tab-pane" type="button" role="tab">
                                 优化参数
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="features-tab" data-bs-toggle="tab" 
+                            <button class="nav-link" id="features-tab" data-bs-toggle="tab"
                                     data-bs-target="#features-tab-pane" type="button" role="tab">
                                 功能开关
                             </button>
                         </li>
                     </ul>
-                    
+
                     <div class="tab-content" id="configTabsContent">
                         <!-- 模型架构标签 -->
                         <div class="tab-pane fade show active" id="model-tab-pane" role="tabpanel">
@@ -598,17 +628,17 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">多分辨率 (multires)</label>
-                                        <input type="text" class="config-input" data-key="multires" 
+                                        <input type="text" class="config-input" data-key="multires"
                                                value="[1, 2]" placeholder="例如: [1, 2, 4]">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">代理数量 (agent_num)</label>
-                                        <input type="number" class="config-input" data-key="agent_num" 
+                                        <input type="number" class="config-input" data-key="agent_num"
                                                value="200" min="10" max="1000">
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="config-group">
                                 <div class="config-group-title">Transformer参数</div>
                                 <div class="row g-3">
@@ -647,7 +677,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- 优化参数标签 -->
                         <div class="tab-pane fade" id="optimization-tab-pane" role="tabpanel">
                             <div class="config-group">
@@ -655,7 +685,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="config-label">迭代次数 (iterations)</label>
-                                        <input type="number" class="config-input" data-key="iterations" 
+                                        <input type="number" class="config-input" data-key="iterations"
                                                value="30000" min="1000" step="1000">
                                     </div>
                                     <div class="col-md-6">
@@ -668,60 +698,60 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">密度化开始 (densify_from_iter)</label>
-                                        <input type="number" class="config-input" data-key="densify_from_iter" 
+                                        <input type="number" class="config-input" data-key="densify_from_iter"
                                                value="1000" min="0" step="100">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">密度化结束 (densify_until_iter)</label>
-                                        <input type="number" class="config-input" data-key="densify_until_iter" 
+                                        <input type="number" class="config-input" data-key="densify_until_iter"
                                                value="7000" min="0" step="100">
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="config-group">
                                 <div class="config-group-title">学习率</div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="config-label">初始变形学习率</label>
-                                        <input type="number" class="config-input" data-key="deformation_lr_init" 
+                                        <input type="number" class="config-input" data-key="deformation_lr_init"
                                                value="0.0001" min="0.000001" step="0.00001">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">最终变形学习率</label>
-                                        <input type="number" class="config-input" data-key="deformation_lr_final" 
+                                        <input type="number" class="config-input" data-key="deformation_lr_final"
                                                value="0.00001" min="0.000001" step="0.000001">
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="config-group">
                                 <div class="config-group-title">正则化</div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="config-label">平面TV权重 (plane_tv_weight)</label>
-                                        <input type="number" class="config-input" data-key="plane_tv_weight" 
+                                        <input type="number" class="config-input" data-key="plane_tv_weight"
                                                value="0.0002" min="0" step="0.0001">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">时间平滑权重 (time_smoothness_weight)</label>
-                                        <input type="number" class="config-input" data-key="time_smoothness_weight" 
+                                        <input type="number" class="config-input" data-key="time_smoothness_weight"
                                                value="0.001" min="0" step="0.0001">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">L1时间平面 (l1_time_planes)</label>
-                                        <input type="number" class="config-input" data-key="l1_time_planes" 
+                                        <input type="number" class="config-input" data-key="l1_time_planes"
                                                value="0.0001" min="0" step="0.00001">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="config-label">Dropout概率 (drop_prob)</label>
-                                        <input type="number" class="config-input" data-key="drop_prob" 
+                                        <input type="number" class="config-input" data-key="drop_prob"
                                                value="0.1" min="0" max="0.5" step="0.05">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- 功能开关标签 -->
                         <div class="tab-pane fade" id="features-tab-pane" role="tabpanel">
                             <div class="config-group">
@@ -729,62 +759,62 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="train_tri_plane" checked>
                                             <label class="form-check-label">训练三角平面</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="lip_fine_tuning" checked>
                                             <label class="form-check-label">LIP微调</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="depth_fine_tuning" checked>
                                             <label class="form-check-label">深度微调</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="no_do">
                                             <label class="form-check-label">禁用深度优化</label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="config-group">
                                 <div class="config-group-title">其他开关</div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="no_dshs">
                                             <label class="form-check-label">禁用DSHS</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="no_ds">
                                             <label class="form-check-label">禁用DS</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="split_gs_in_fine_stage">
                                             <label class="form-check-label">微调阶段分割GS</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input config-switch" type="checkbox" 
+                                            <input class="form-check-input config-switch" type="checkbox"
                                                    data-key="only_infer">
                                             <label class="form-check-label">仅推理模式</label>
                                         </div>
@@ -793,10 +823,10 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- JSON预览 -->
                     <div class="mt-4">
-                        <button class="btn btn-outline-secondary w-100" type="button" 
+                        <button class="btn btn-outline-secondary w-100" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#jsonPreview">
                             <i class="fas fa-code me-2"></i>查看配置JSON
                         </button>
@@ -810,7 +840,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 右侧状态区域 -->
             <div class="col-lg-6">
                 <!-- 状态面板 -->
@@ -821,7 +851,7 @@
                         </div>
                         <h2 class="panel-title">训练状态</h2>
                     </div>
-                    
+
                     <!-- 状态指示器 -->
                     <div class="status-indicator status-ready" id="statusIndicator">
                         <div class="status-icon">
@@ -832,7 +862,7 @@
                             <p class="mb-0 text-muted">等待开始训练任务</p>
                         </div>
                     </div>
-                    
+
                     <!-- 进度条 -->
                     <div class="progress-container">
                         <div class="d-flex justify-content-between mb-2">
@@ -843,7 +873,7 @@
                             <div class="progress-bar" id="progressFill" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <!-- 任务信息 -->
                     <div class="mt-4">
                         <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>任务信息</h5>
@@ -874,16 +904,16 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 训练日志 -->
                     <div class="mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0"><i class="fas fa-terminal me-2"></i>训练日志</h5>
                             <div>
-                                <button class="btn btn-sm btn-outline-secondary me-2" onclick="clearLogs()">
+                                <button class="btn btn-sm btn-outline-secondary me-2" id="clearLogsBtn">
                                     <i class="fas fa-trash-alt"></i> 清空
                                 </button>
-                                <button class="btn btn-sm btn-outline-primary" onclick="toggleLogs()">
+                                <button class="btn btn-sm btn-outline-primary" id="toggleLogsBtn">
                                     <i class="fas fa-expand"></i> 全屏
                                 </button>
                             </div>
@@ -895,7 +925,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 训练历史 -->
         <div class="config-panel mt-4 fade-in">
             <div class="panel-header">
@@ -903,11 +933,11 @@
                     <i class="fas fa-history"></i>
                 </div>
                 <h2 class="panel-title">训练历史</h2>
-                <button class="btn btn-sm btn-outline-primary ms-auto" onclick="refreshHistory()">
+                <button class="btn btn-sm btn-outline-primary ms-auto" id="refreshHistoryBtn">
                     <i class="fas fa-sync-alt"></i> 刷新
                 </button>
             </div>
-            
+
             <div class="history-list" id="historyList">
                 <div class="text-center py-5 text-muted">
                     <i class="fas fa-clock fa-3x mb-3"></i>
@@ -919,7 +949,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         // ========== 全局变量 ==========
         let currentTaskId = null;
@@ -928,142 +958,438 @@
             ModelHiddenParams: {},
             OptimizationParams: {}
         };
-        
-        // 训练预设描述
-        const presetDescriptions = {
-            quick: '快速训练 (5000迭代): 适合快速测试和原型验证，训练时间短，质量适中。',
-            balanced: '平衡训练 (15000迭代): 质量与速度的良好平衡，推荐大多数场景使用。',
-            quality: '高质量 (30000迭代): 最佳视觉质量，适合生产环境，需要更多训练时间。',
-            research: '研究模式 (50000迭代): 最高质量，用于学术研究或极限质量需求。'
-        };
-        
-        // ========== 页面初始化 ==========
+
+        // ========== DOM加载完成 ==========
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🎉 模型训练页面加载完成');
-            
-            // 初始化文件上传
-            initFileUpload();
-            
+
+            // 初始化所有事件监听器
+            initEventListeners();
+
             // 加载默认配置
             loadConfigDefaults();
-            
+
             // 加载训练历史
             loadTrainingHistory();
-            
+
             // 初始化主题
             initTheme();
+
+            // 自动检查训练任务
+            autoCheckTrainingTask();
         });
-        
-        // ========== 文件上传功能 ==========
+
+        // ========== 事件监听器初始化 ==========
+        function initEventListeners() {
+            console.log('🔧 初始化事件监听器...');
+
+            // 文件上传事件
+            initFileUpload();
+
+            // 按钮事件
+            document.getElementById('startBtn').addEventListener('click', startTraining);
+            document.getElementById('stopBtn').addEventListener('click', stopTraining);
+            document.getElementById('debugBtn').addEventListener('click', debugUpload);
+            document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+            document.getElementById('toggleLogsBtn').addEventListener('click', toggleLogs);
+            document.getElementById('refreshHistoryBtn').addEventListener('click', refreshHistory);
+            document.getElementById('saveConfigBtn').addEventListener('click', saveCurrentConfig);
+
+            // 训练预设
+            document.getElementById('trainingPreset').addEventListener('change', function() {
+                applyTrainingPreset(this.value);
+            });
+
+            console.log('✅ 事件监听器初始化完成');
+        }
+
+        // ========== 文件上传功能 - 完全修复版 ==========
         function initFileUpload() {
+            console.log('🔧 初始化文件上传功能...');
+
             const uploadArea = document.getElementById('uploadArea');
             const videoFile = document.getElementById('videoFile');
-            
-            // 点击上传区域
-            uploadArea.addEventListener('click', () => {
-                videoFile.click();
-            });
-            
-            // 拖拽上传
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#7B68EE';
-                uploadArea.style.background = 'rgba(123, 104, 238, 0.1)';
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.borderColor = '#4A90E2';
-                uploadArea.style.background = '';
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    handleVideoFile(files[0]);
-                }
-                uploadArea.style.borderColor = '#4A90E2';
-                uploadArea.style.background = '';
-            });
-            
-            // 文件选择
-            videoFile.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    handleVideoFile(e.target.files[0]);
-                }
-            });
-        }
-        
-        async function handleVideoFile(file) {
-            if (!file.type.startsWith('video/')) {
-                alert('请选择视频文件！');
+            const uploadText = document.getElementById('uploadText');
+
+            if (!uploadArea || !videoFile) {
+                console.error('❌ 找不到上传元素');
                 return;
             }
-            
-            // 显示文件信息
+
+            // 1. 点击上传区域
+            uploadArea.addEventListener('click', function(e) {
+                // 防止点击文件输入区域时触发两次
+                if (e.target === uploadArea || e.target === uploadText) {
+                    console.log('👆 点击上传区域');
+                    videoFile.click();
+                }
+            });
+
+            // 2. 文件选择变化
+            videoFile.addEventListener('change', function(e) {
+                console.log('📁 文件选择变化');
+                if (this.files && this.files.length > 0) {
+                    const file = this.files[0];
+                    console.log('选择文件:', file.name);
+                    handleVideoFile(file);
+                }
+            });
+
+            // 3. 拖拽上传
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('dragover');
+                console.log('📤 拖拽进入');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('dragover');
+                console.log('📥 拖拽离开');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    console.log('拖拽文件:', file.name);
+                    handleVideoFile(file);
+                }
+            });
+
+            console.log('✅ 文件上传功能初始化完成');
+        }
+
+        async function handleVideoFile(file) {
+            console.log('📁 处理视频文件:', file.name);
+
+            if (!file.type.startsWith('video/')) {
+                alert('请选择视频文件！支持格式: MP4, AVI, MOV');
+                return;
+            }
+
+            // 验证文件大小 (最大500MB)
+            const maxSize = 500 * 1024 * 1024; // 500MB
+            if (file.size > maxSize) {
+                alert(`文件太大！最大支持 ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
+                return;
+            }
+
+            // 显示上传状态
             const fileSize = (file.size / (1024 * 1024)).toFixed(2);
             const uploadPreview = document.getElementById('uploadPreview');
-            
+
             uploadPreview.innerHTML = `
-                <div class="alert alert-success d-flex align-items-center">
-                    <i class="fas fa-file-video fa-2x me-3"></i>
+                <div class="alert alert-info d-flex align-items-center">
+                    <i class="fas fa-spinner fa-spin fa-2x me-3"></i>
                     <div>
-                        <div class="fw-bold">${file.name}</div>
+                        <div class="fw-bold">正在上传: ${file.name}</div>
                         <div class="text-muted">${fileSize} MB</div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 id="uploadProgressBar" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <button class="btn btn-sm btn-outline-danger ms-auto" onclick="removeVideoFile()">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
             `;
-            
+
             // 自动设置模型名称
             const modelName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, '_');
             document.getElementById('modelName').value = modelName;
-            
+
             // 上传文件到服务器
-            await uploadVideoFile(file);
+            const success = await uploadVideoFile(file);
+
+            if (success) {
+                uploadPreview.innerHTML = `
+                    <div class="alert alert-success d-flex align-items-center">
+                        <i class="fas fa-check-circle fa-2x me-3"></i>
+                        <div>
+                            <div class="fw-bold">✅ ${file.name}</div>
+                            <div class="text-muted">${fileSize} MB - 上传成功</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger ms-auto" onclick="removeVideoFile()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                addLog(`✅ 视频上传成功: ${file.name}`, 'success');
+            } else {
+                uploadPreview.innerHTML = `
+                    <div class="alert alert-danger d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+                        <div>
+                            <div class="fw-bold">❌ ${file.name}</div>
+                            <div class="text-muted">上传失败，请重试</div>
+                        </div>
+                    </div>
+                `;
+            }
         }
-        
-        function removeVideoFile() {
-            document.getElementById('videoFile').value = '';
-            document.getElementById('uploadPreview').innerHTML = '';
-        }
-        
+
         async function uploadVideoFile(file) {
+            console.log('📤 上传视频文件到服务器:', file.name);
+
             const formData = new FormData();
             formData.append('file', file);
-            
+
             try {
-                addLog('正在上传视频文件...', 'info');
-                
                 const response = await fetch('/api/upload/video', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+                console.log('上传响应:', data);
+
                 if (data.success) {
-                    addLog(`视频上传成功: ${data.filename}`, 'success');
+                    // 保存到localStorage
                     localStorage.setItem('lastVideoPath', data.path);
+                    localStorage.setItem('lastVideoUrl', data.web_path);
+                    localStorage.setItem('lastVideoName', data.filename);
+
+                    console.log('✅ 视频上传成功:', {
+                        path: data.path,
+                        url: data.web_path
+                    });
+
+                    return true;
                 } else {
-                    addLog(`上传失败: ${data.error}`, 'error');
+                    console.error('❌ 上传失败:', data.error);
+                    addLog(`❌ 上传失败: ${data.error}`, 'error');
+                    return false;
                 }
             } catch (error) {
-                addLog(`上传错误: ${error.message}`, 'error');
+                console.error('❌ 上传错误:', error);
+                addLog(`❌ 上传错误: ${error.message}`, 'error');
+                return false;
             }
         }
-        
+
+        function removeVideoFile() {
+            console.log('🗑️ 移除视频文件');
+            document.getElementById('videoFile').value = '';
+            document.getElementById('uploadPreview').innerHTML = '';
+            localStorage.removeItem('lastVideoPath');
+            localStorage.removeItem('lastVideoUrl');
+            localStorage.removeItem('lastVideoName');
+        }
+
+        // ========== 训练启动功能 ==========
+        async function startTraining() {
+            console.log('🚀 开始训练流程...');
+
+            // 1. 验证视频文件
+            const videoFile = document.getElementById('videoFile').files[0];
+            let videoPath = localStorage.getItem('lastVideoPath');
+
+            if (!videoFile && !videoPath) {
+                alert('❌ 请先上传训练视频！');
+                return;
+            }
+
+            // 2. 验证模型名称
+            const modelName = document.getElementById('modelName').value.trim();
+            if (!modelName) {
+                alert('❌ 请输入模型名称！');
+                return;
+            }
+
+            // 3. 更新UI状态
+            updateStatus('starting', '正在准备训练...');
+            addLog('开始训练准备...', 'info');
+
+            // 禁用开始按钮，启用停止按钮
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+
+            try {
+                // 4. 如果localStorage中没有视频路径，需要上传
+                if (!videoPath && videoFile) {
+                    addLog('正在上传视频文件...', 'info');
+                    const success = await uploadVideoFile(videoFile);
+
+                    if (!success) {
+                        throw new Error('视频上传失败');
+                    }
+
+                    videoPath = localStorage.getItem('lastVideoPath');
+                }
+
+                if (!videoPath) {
+                    throw new Error('无法获取视频路径');
+                }
+
+                // 5. 准备训练配置
+                const config = {
+                    action: 'start',
+                    video_path: videoPath,
+                    model_name: modelName,
+                    model_path: `output/${modelName}`,
+                    config_file: document.getElementById('configFile').value,
+                    epochs: parseInt(document.getElementById('epochs').value) || 100,
+                    preprocess: document.getElementById('preprocessVideo').checked,
+                    use_gpu: document.getElementById('useGPU').checked,
+                    advanced_config: currentConfig
+                };
+
+                addLog('准备训练配置...', 'info');
+                addLog(`模型名称: ${modelName}`, 'info');
+                addLog(`训练轮数: ${config.epochs}`, 'info');
+
+                // 6. 发送训练请求
+                addLog('正在启动训练任务...', 'info');
+
+                const response = await fetch('/model_training', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+                console.log('训练启动响应:', data);
+
+                if (data.status === 'success') {
+                    // 成功获取任务ID
+                    currentTaskId = data.task_id;
+
+                    // 更新UI
+                    document.getElementById('taskId').textContent = currentTaskId.substring(0, 8) + '...';
+                    document.getElementById('startTime').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('estimatedTime').textContent = '计算中...';
+                    document.getElementById('modelDir').textContent = config.model_path;
+
+                    // 清除旧日志
+                    clearLogs();
+                    addLog(`✅ 训练任务启动成功！`, 'success');
+                    addLog(`任务ID: ${currentTaskId}`, 'info');
+                    addLog(`模型目录: ${config.model_path}`, 'info');
+
+                    // 开始轮询
+                    startPolling();
+
+                } else {
+                    throw new Error(data.error || '训练启动失败');
+                }
+
+            } catch (error) {
+                console.error('❌ 训练启动错误:', error);
+
+                addLog(`❌ 训练启动错误: ${error.message}`, 'error');
+                alert(`训练启动失败: ${error.message}`);
+
+                // 恢复按钮状态
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                updateStatus('ready', '准备就绪');
+            }
+        }
+
+        // ========== 轮询状态 ==========
+        function startPolling() {
+            // 清除旧轮询
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            // 立即获取一次状态
+            pollTaskStatus();
+
+            // 设置定期轮询
+            pollingInterval = setInterval(pollTaskStatus, 3000);
+
+            console.log('🔍 开始轮询训练状态...');
+            addLog('开始监控训练进度...', 'info');
+        }
+
+        async function pollTaskStatus() {
+            if (!currentTaskId) {
+                console.log('⚠️ 没有任务ID，停止轮询');
+                stopPolling();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/train/status/${currentTaskId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateTaskStatus(data.task);
+                } else {
+                    console.log('❌ 任务状态获取失败:', data.error);
+                    addLog('任务状态获取失败，停止轮询', 'warning');
+                    stopPolling();
+                }
+            } catch (error) {
+                console.error('轮询失败:', error);
+            }
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                console.log('🛑 停止轮询');
+            }
+        }
+
+        // ========== 停止训练 ==========
+        async function stopTraining() {
+            if (!currentTaskId) {
+                alert('没有正在运行的任务');
+                return;
+            }
+
+            if (!confirm('确定要停止训练吗？已训练的进度可能会丢失。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/train/stop/${currentTaskId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('训练任务已停止', 'warning');
+                    updateStatus('stopped', '训练已停止');
+
+                    // 停止轮询
+                    stopPolling();
+
+                    // 更新按钮状态
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+
+                    // 重新加载历史记录
+                    loadTrainingHistory();
+
+                } else {
+                    addLog(`停止失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`停止错误: ${error.message}`, 'error');
+            }
+        }
+
         // ========== 配置管理 ==========
         async function loadConfigDefaults() {
             try {
                 const response = await fetch('/api/config/defaults');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     currentConfig = data.configs;
-                    
+
                     // 设置默认值
                     if (!currentConfig.ModelHiddenParams.kplanes_config) {
                         currentConfig.ModelHiddenParams.kplanes_config = {
@@ -1073,34 +1399,37 @@
                             resolution: [64, 64, 64]
                         };
                     }
-                    
+
                     // 初始化UI
                     initializeConfigUI();
                     updateConfigPreview();
                     attachConfigEventListeners();
-                    
+
                     // 默认选择高质量预设
                     applyTrainingPreset('quality');
+
+                } else {
+                    initializeWithDefaultConfig();
                 }
             } catch (error) {
                 console.error('加载配置失败:', error);
                 initializeWithDefaultConfig();
             }
         }
-        
+
         function initializeConfigUI() {
             // 设置所有输入控件的值
             document.querySelectorAll('.config-input, .config-select').forEach(input => {
                 const key = input.getAttribute('data-key');
                 const value = getConfigValue(key);
-                
+
                 if (input.tagName === 'SELECT') {
                     input.value = value !== undefined ? value : '';
                 } else {
                     input.value = value !== undefined ? value : '';
                 }
             });
-            
+
             // 设置所有开关
             document.querySelectorAll('.config-switch').forEach(switchEl => {
                 const key = switchEl.getAttribute('data-key');
@@ -1108,11 +1437,11 @@
                 switchEl.checked = Boolean(value);
             });
         }
-        
+
         function getConfigValue(key) {
             const keys = key.split('.');
             let current = currentConfig;
-            
+
             for (const k of keys) {
                 if (current && typeof current === 'object' && k in current) {
                     current = current[k];
@@ -1120,14 +1449,14 @@
                     return undefined;
                 }
             }
-            
+
             return current;
         }
-        
+
         function setConfigValue(key, value) {
             const keys = key.split('.');
             let current = currentConfig;
-            
+
             for (let i = 0; i < keys.length - 1; i++) {
                 const k = keys[i];
                 if (!current[k] || typeof current[k] !== 'object') {
@@ -1135,21 +1464,27 @@
                 }
                 current = current[k];
             }
-            
+
             const lastKey = keys[keys.length - 1];
-            
+
             // 类型转换
             if (typeof value === 'string') {
                 if (value === 'true') value = true;
                 else if (value === 'false') value = false;
                 else if (!isNaN(value) && value !== '') {
                     value = Number(value);
+                } else if (value.startsWith('[') && value.endsWith(']')) {
+                    try {
+                        value = JSON.parse(value);
+                    } catch (e) {
+                        // 保持原样
+                    }
                 }
             }
-            
+
             current[lastKey] = value;
         }
-        
+
         function attachConfigEventListeners() {
             // 文本和数字输入
             document.querySelectorAll('.config-input, .config-select').forEach(input => {
@@ -1159,7 +1494,7 @@
                     updateConfigPreview();
                 });
             });
-            
+
             // 开关
             document.querySelectorAll('.config-switch').forEach(switchEl => {
                 switchEl.addEventListener('change', function() {
@@ -1169,34 +1504,34 @@
                 });
             });
         }
-        
-        function applyTrainingPreset(presetName = null) {
-            const presetSelect = document.getElementById('trainingPreset');
-            const preset = presetName || presetSelect.value;
-            
-            // 更新下拉框显示
-            if (presetName) {
-                presetSelect.value = preset;
-            }
-            
+
+        // 训练预设描述
+        const presetDescriptions = {
+            quick: '快速训练 (5000迭代): 适合快速测试和原型验证，训练时间短，质量适中。',
+            balanced: '平衡训练 (15000迭代): 质量与速度的良好平衡，推荐大多数场景使用。',
+            quality: '高质量 (30000迭代): 最佳视觉质量，适合生产环境，需要更多训练时间。',
+            research: '研究模式 (50000迭代): 最高质量，用于学术研究或极限质量需求。'
+        };
+
+        function applyTrainingPreset(presetName) {
             // 显示预设描述
             const presetInfo = document.getElementById('presetInfo');
             const presetDescription = document.getElementById('presetDescription');
-            
-            if (presetDescriptions[preset]) {
+
+            if (presetDescriptions[presetName]) {
                 presetInfo.style.display = 'block';
-                presetDescription.textContent = presetDescriptions[preset];
+                presetDescription.textContent = presetDescriptions[presetName];
             } else {
                 presetInfo.style.display = 'none';
             }
-            
+
             // 如果是自定义预设，不修改配置
-            if (preset === 'custom') {
+            if (presetName === 'custom') {
                 return;
             }
-            
+
             // 根据预设更新配置
-            switch(preset) {
+            switch(presetName) {
                 case 'quick':
                     setConfigValue('iterations', 5000);
                     setConfigValue('batch_size', 4);
@@ -1222,25 +1557,25 @@
                     setConfigValue('net_width', 512);
                     break;
             }
-            
+
             // 更新UI
             initializeConfigUI();
             updateConfigPreview();
         }
-        
+
         function updateConfigPreview() {
             const previewEl = document.getElementById('configJsonPreview');
             if (previewEl) {
                 previewEl.textContent = JSON.stringify(currentConfig, null, 2);
             }
         }
-        
+
         async function saveCurrentConfig() {
-            const configName = prompt('请输入配置名称:', 
+            const configName = prompt('请输入配置名称:',
                                      `config_${new Date().toISOString().slice(0, 10)}`);
-            
+
             if (!configName) return;
-            
+
             try {
                 const response = await fetch('/api/config/save', {
                     method: 'POST',
@@ -1252,19 +1587,22 @@
                         config: currentConfig
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     alert(`✅ 配置已保存!`);
+                    addLog(`配置已保存: ${configName}`, 'success');
                 } else {
                     alert(`❌ 保存失败: ${data.error}`);
+                    addLog(`配置保存失败: ${data.error}`, 'error');
                 }
             } catch (error) {
                 alert(`❌ 保存失败: ${error.message}`);
+                addLog(`配置保存错误: ${error.message}`, 'error');
             }
         }
-        
+
         function initializeWithDefaultConfig() {
             currentConfig = {
                 ModelHiddenParams: {
@@ -1315,196 +1653,42 @@
                     canonical_tri_plane_factor_list: ["opacity", "shs"]
                 }
             };
-            
+
             initializeConfigUI();
             updateConfigPreview();
             applyTrainingPreset('quality');
         }
-        
-        // ========== 训练控制 ==========
-        async function startTraining() {
-            // 验证输入
-            const videoFile = document.getElementById('videoFile').files[0];
-            if (!videoFile) {
-                alert('请先上传训练视频！');
-                return;
-            }
-            
-            const modelName = document.getElementById('modelName').value.trim();
-            if (!modelName) {
-                alert('请输入模型名称！');
-                return;
-            }
-            
-            // 准备训练配置
-            const config = {
-                action: 'start',
-                video_path: localStorage.getItem('lastVideoPath') || '',
-                model_path: `output/${modelName}`,
-                config_file: document.getElementById('configFile').value,
-                epochs: parseInt(document.getElementById('epochs').value),
-                preprocess: document.getElementById('preprocessVideo').checked,
-                use_gpu: document.getElementById('useGPU').checked,
-                advanced_config: currentConfig
-            };
-            
-            try {
-                // 禁用开始按钮，启用停止按钮
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = false;
-                
-                // 更新状态
-                updateStatus('starting', '正在启动训练任务...');
-                addLog('正在启动训练任务...', 'info');
-                
-                // 发送训练请求
-                const response = await fetch('/model_training', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(config)
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    currentTaskId = data.task_id;
-                    
-                    // 更新任务信息
-                    document.getElementById('taskId').textContent = currentTaskId.substring(0, 8) + '...';
-                    document.getElementById('startTime').textContent = new Date().toLocaleTimeString();
-                    document.getElementById('estimatedTime').textContent = '计算中...';
-                    document.getElementById('modelDir').textContent = config.model_path;
-                    
-                    // 开始轮询训练状态
-                    startPolling();
-                    
-                    addLog('训练任务已成功启动', 'success');
-                } else {
-                    addLog(`启动失败: ${data.error}`, 'error');
-                    alert('启动训练失败: ' + (data.error || '未知错误'));
-                    
-                    // 恢复按钮状态
-                    document.getElementById('startBtn').disabled = false;
-                    document.getElementById('stopBtn').disabled = true;
-                    updateStatus('ready', '准备就绪');
-                }
-            } catch (error) {
-                addLog(`请求错误: ${error.message}`, 'error');
-                alert('发生错误: ' + error.message);
-                
-                // 恢复按钮状态
-                document.getElementById('startBtn').disabled = false;
-                document.getElementById('stopBtn').disabled = true;
-                updateStatus('ready', '准备就绪');
-            }
-        }
-        
-        async function stopTraining() {
-            if (!currentTaskId) {
-                alert('没有正在运行的任务');
-                return;
-            }
-            
-            if (!confirm('确定要停止训练吗？已训练的进度可能会丢失。')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/train/stop/${currentTaskId}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    addLog('训练任务已停止', 'warning');
-                    updateStatus('stopped', '训练已停止');
-                    
-                    // 停止轮询
-                    stopPolling();
-                    
-                    // 更新按钮状态
-                    document.getElementById('startBtn').disabled = false;
-                    document.getElementById('stopBtn').disabled = true;
-                } else {
-                    addLog(`停止失败: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                addLog(`停止错误: ${error.message}`, 'error');
-            }
-        }
-        
-        // ========== 状态监控 ==========
-        function startPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-            }
-            
-            pollingInterval = setInterval(async () => {
-                if (!currentTaskId) {
-                    stopPolling();
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`/api/train/status/${currentTaskId}`);
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        updateTaskStatus(data.task);
-                    } else {
-                        addLog('任务状态获取失败，停止轮询', 'warning');
-                        stopPolling();
-                    }
-                } catch (error) {
-                    console.error('轮询失败:', error);
-                }
-            }, 3000); // 每3秒轮询一次
-        }
-        
-        function stopPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-            }
-        }
-        
+
+        // ========== 状态更新 ==========
         function updateTaskStatus(task) {
             // 更新状态指示器
             updateStatus(task.status, getStatusText(task.status));
-            
+
             // 更新进度
             const progress = task.progress || 0;
             document.getElementById('progressFill').style.width = `${progress}%`;
             document.getElementById('progressText').textContent = `${progress.toFixed(1)}%`;
-            
+
             // 更新日志
             if (task.recent_logs && task.recent_logs.length > 0) {
                 task.recent_logs.forEach(log => {
-                    if (!logContainer.innerHTML.includes(log)) {
+                    if (!document.getElementById('logContainer').innerHTML.includes(log)) {
                         addLog(log, 'info');
                     }
                 });
             }
-            
-            // 更新任务信息
-            if (task.end_time) {
-                document.getElementById('estimatedTime').textContent = '已完成';
-            }
-            
+
             // 如果任务完成或失败，停止轮询
             if (['completed', 'failed', 'stopped'].includes(task.status)) {
                 stopPolling();
-                
+
                 // 更新按钮状态
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('stopBtn').disabled = true;
-                
+
                 // 重新加载历史记录
                 loadTrainingHistory();
-                
+
                 if (task.status === 'completed') {
                     addLog('🎉 训练完成！', 'success');
                     alert('训练完成！模型已保存。');
@@ -1513,19 +1697,19 @@
                 }
             }
         }
-        
+
         function updateStatus(status, message) {
             const statusIndicator = document.getElementById('statusIndicator');
-            const statusClasses = ['status-ready', 'status-running', 'status-completed', 'status-error', 'status-stopped'];
-            
+            const statusClasses = ['status-ready', 'status-running', 'status-completed', 'status-failed', 'status-stopped'];
+
             // 移除所有状态类
             statusClasses.forEach(cls => {
                 statusIndicator.classList.remove(cls);
             });
-            
+
             let statusClass = 'status-ready';
             let icon = 'fa-check';
-            
+
             switch(status) {
                 case 'starting':
                 case 'preprocessing':
@@ -1538,7 +1722,7 @@
                     icon = 'fa-check-circle';
                     break;
                 case 'failed':
-                    statusClass = 'status-error';
+                    statusClass = 'status-failed';
                     icon = 'fa-exclamation-circle';
                     break;
                 case 'stopped':
@@ -1546,13 +1730,13 @@
                     icon = 'fa-stop-circle';
                     break;
             }
-            
+
             statusIndicator.classList.add(statusClass);
             statusIndicator.querySelector('.status-icon').innerHTML = `<i class="fas ${icon}"></i>`;
             statusIndicator.querySelector('h3').textContent = getStatusText(status);
             statusIndicator.querySelector('p').textContent = message;
         }
-        
+
         function getStatusText(status) {
             const statusMap = {
                 'ready': '准备就绪',
@@ -1565,7 +1749,7 @@
             };
             return statusMap[status] || status;
         }
-        
+
         // ========== 日志管理 ==========
         function addLog(message, type = 'info') {
             const logContainer = document.getElementById('logContainer');
@@ -1573,15 +1757,15 @@
             logLine.className = `log-line ${type}`;
             logLine.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
             logContainer.appendChild(logLine);
-            
+
             // 自动滚动到底部
             logContainer.scrollTop = logContainer.scrollHeight;
         }
-        
+
         function clearLogs() {
             document.getElementById('logContainer').innerHTML = '<div class="log-line info">日志已清空</div>';
         }
-        
+
         function toggleLogs() {
             const logContainer = document.getElementById('logContainer');
             if (logContainer.style.height === '500px') {
@@ -1590,15 +1774,15 @@
                 logContainer.style.height = '500px';
             }
         }
-        
+
         // ========== 历史记录 ==========
         async function loadTrainingHistory() {
             try {
                 const response = await fetch('/api/train/list');
                 const data = await response.json();
-                
+
                 const historyList = document.getElementById('historyList');
-                
+
                 if (data.success && data.tasks && data.tasks.length > 0) {
                     renderTrainingHistory(data.tasks);
                 } else {
@@ -1613,19 +1797,19 @@
                 console.error('加载历史记录失败:', error);
             }
         }
-        
+
         function renderTrainingHistory(tasks) {
             const historyList = document.getElementById('historyList');
-            
+
             // 按开始时间排序（最新的在前面）
             tasks.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-            
+
             let html = '';
-            
+
             tasks.forEach(task => {
                 const startTime = new Date(task.start_time);
                 const timeStr = startTime.toLocaleDateString() + ' ' + startTime.toLocaleTimeString();
-                
+
                 html += `
                     <div class="history-item">
                         <div>
@@ -1644,21 +1828,123 @@
                     </div>
                 `;
             });
-            
+
             historyList.innerHTML = html;
         }
-        
+
         function refreshHistory() {
             loadTrainingHistory();
             addLog('训练历史已刷新', 'info');
         }
-        
+
+        // ========== 调试功能 ==========
+        async function debugUpload() {
+            console.log('🔍 开始调试上传功能...');
+
+            addLog('=== 开始调试 ===', 'info');
+
+            // 检查文件输入
+            const fileInput = document.getElementById('videoFile');
+            console.log('文件输入:', fileInput.files.length > 0 ? fileInput.files[0] : '无文件');
+
+            // 检查localStorage
+            const lastVideoPath = localStorage.getItem('lastVideoPath');
+            const lastVideoUrl = localStorage.getItem('lastVideoUrl');
+            console.log('localStorage:', {
+                lastVideoPath: lastVideoPath,
+                lastVideoUrl: lastVideoUrl
+            });
+
+            addLog(`文件输入状态: ${fileInput.files.length > 0 ? '有文件' : '无文件'}`, 'info');
+            addLog(`本地存储视频路径: ${lastVideoPath || '无'}`, 'info');
+
+            // 测试API
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                console.log('API健康检查:', data);
+
+                addLog('✅ API服务正常', 'success');
+                addLog(`工作目录: ${data.working_directory}`, 'info');
+
+                // 测试上传目录
+                const dirResponse = await fetch('/api/debug/paths');
+                const dirData = await dirResponse.json();
+
+                if (dirResponse.ok) {
+                    addLog('✅ 目录检查正常', 'success');
+                    addLog(`上传目录: ${dirData.exists['static/uploads/videos'] ? '存在' : '不存在'}`, 'info');
+
+                    if (dirData.upload_dir_contents) {
+                        addLog(`上传目录文件: ${dirData.upload_dir_contents.length}个`, 'info');
+                    }
+                }
+
+            } catch (error) {
+                console.error('API测试失败:', error);
+                addLog('❌ API服务异常: ' + error.message, 'error');
+            }
+
+            // 测试上传功能
+            if (fileInput.files.length > 0) {
+                addLog('测试文件上传...', 'info');
+                const success = await uploadVideoFile(fileInput.files[0]);
+                if (success) {
+                    addLog('✅ 文件上传测试通过', 'success');
+                } else {
+                    addLog('❌ 文件上传测试失败', 'error');
+                }
+            }
+
+            addLog('=== 调试结束 ===', 'info');
+            alert('调试完成，请查看日志和浏览器控制台');
+        }
+
+        // ========== 自动检查任务 ==========
+        async function autoCheckTrainingTask() {
+            // 页面加载后等待2秒，然后检查是否有正在运行的任务
+            setTimeout(async () => {
+                console.log('🔍 自动检查训练任务...');
+                addLog('检查已有训练任务...', 'info');
+
+                try {
+                    const response = await fetch('/api/train/latest');
+                    const data = await response.json();
+
+                    if (data.success && data.task_id) {
+                        currentTaskId = data.task_id;
+                        console.log('找到最新任务:', currentTaskId);
+
+                        // 更新UI显示
+                        document.getElementById('taskId').textContent = currentTaskId.substring(0, 8) + '...';
+                        updateStatus(data.status || 'running', '发现已有训练任务');
+
+                        // 开始轮询这个任务
+                        startPolling();
+
+                        // 禁用开始按钮，启用停止按钮
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('stopBtn').disabled = false;
+
+                        addLog(`发现已有训练任务: ${currentTaskId}`, 'info');
+                    } else {
+                        console.log('没有找到活动任务');
+                        updateStatus('ready', '准备开始训练');
+                        addLog('没有发现已有训练任务', 'info');
+                    }
+                } catch (error) {
+                    console.error('检查任务失败:', error);
+                    addLog('检查任务失败: ' + error.message, 'error');
+                }
+            }, 2000);
+        }
+
         // ========== 主题管理 ==========
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         }
-        
+
         // ========== 辅助函数 ==========
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
