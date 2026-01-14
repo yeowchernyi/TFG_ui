@@ -80,3 +80,8 @@ TF_PYTHON = "/home/your_user/.conda/envs/egstalker_tf_py39/bin/python"
 ## 💡 备注
 - **模型训练**: 本仓库目前主要用于推理展示。如需训练新人物，请确保显存 > 24GB 并参考各模块下的 `train.py`。
 - **路径问题**: 建议所有操作在项目根目录 `TFG_ui` 下进行，以保证相对路径引用正确。
+
+---
+
+## 致谢
+- 本项目包含了来自EGSTalker的代码。我们已经修改了render.py以支持我们的 UI 集成。
