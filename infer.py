@@ -95,5 +95,5 @@ if __name__ == "__main__":
         custom_aud_npy="aud.npy",
         custom_aud_wav="aud.wav",
         configs_path="arguments/args.py",
-        iteration=10000
+        iteration=30000
     )

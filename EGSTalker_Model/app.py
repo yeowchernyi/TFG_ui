@@ -23,7 +23,7 @@ def build_command(wav_path: str, out_mp4_path: str, model_path: str, gpu_id: str
     # 1. 确定模型路径 (如果主控端没传，默认用 obama)
     if not model_path:
         model_path = os.path.join(PROJECT_ROOT, "output", "obama")
-
+    
     # 2. 自动推断 source_path (原始视频数据)
     # 逻辑：如果模型在 output/obama，那么原始数据就在 data/obama
     model_name = os.path.basename(model_path.rstrip('/'))
@@ -48,20 +48,20 @@ def get_idle_gpu():
         # 执行 nvidia-smi 查询每块卡的索引和剩余显存 (单位 MiB)
         cmd = "nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits"
         output = subprocess.check_output(cmd, shell=True, text=True)
-
+        
         # 解析输出：[(id, free_memory), ...]
         gpu_stats = []
         for line in output.strip().split('\n'):
             idx, free_mem = map(int, line.split(','))
             if idx not in [6, 7]:
                 gpu_stats.append((idx, free_mem))
-
+        
         # 按剩余显存从大到小排序，取第一名
         best_gpu, max_free = max(gpu_stats, key=lambda x: x[1])
-
+        
         print(f"📊 GPU 状态监控: 最空闲显卡为 {best_gpu} 号 (剩余 {max_free} MiB)")
         return str(best_gpu)
-
+        
     except Exception as e:
         print(f"⚠️ 无法获取 GPU 状态 ({e})，将回退到默认显卡 3")
         return "3"
@@ -118,4 +118,4 @@ def infer():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002, debug=True, threaded=True
+    app.run(host="0.0.0.0", port=5002, debug=True, threaded=True)

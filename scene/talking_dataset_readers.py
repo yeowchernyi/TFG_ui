@@ -375,7 +375,7 @@ def readTalkingPortraitDatasetInfo(path, white_background, eval, extension=".jpg
     
     
     ply_path = os.path.join(path, "fused.ply")
-    path = "datasets/Obama"  # 或者根据你的项目结构，设置合适的路径
+    # path = "datasets/Obama"  # removed hard-coded path
     mesh_path = os.path.join(path, "track_params.pt")
     
     timestamp_mapper, max_time = read_timeline(path)

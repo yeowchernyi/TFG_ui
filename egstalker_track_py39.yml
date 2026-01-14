@@ -159,4 +159,5 @@ dependencies:
       - sympy==1.14.0
       - torch==2.2.2+cu118
       - torchvision==0.17.2+cu118
-      - triton==2.2.
+      - triton==2.2.0
+prefix: /home/xsj/.local/share/mamba/envs/egstalker_track_py39

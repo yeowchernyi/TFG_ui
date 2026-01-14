@@ -11,65 +11,115 @@ def generate_video(data):
     for k, v in data.items():
         print(f"  {k}: {v}")
 
-    if data['model_name'] == "SyncTalk":
+    if data['model_name'] == "EGSTalker":
         try:
-            
-            # 构建命令
-            cmd = [
-                './SyncTalk/run_synctalk.sh', 'infer',
-                '--model_dir', data['model_param'],
-                '--audio_path', data['ref_audio'],
-                '--gpu', data['gpu_choice']
-            ]
+            REPO = "/home/xsj/work/repos/TFG_ui"
+            EG_ROOT = os.path.join(REPO, "EGSTalker_Model", "EGSTalker")
 
-            print(f"[backend.video_generator] 执行命令: {' '.join(cmd)}")
+            tts_wav = data["ref_audio"]
+            source_path = data["source_path"]          # 强烈建议传 /home/xsj/work/repos/TFG_ui/data/obama
+            model_path  = data["model_param"]
+            configs     = data["configs"]
 
-            # 执行命令
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True
-                # check=True
+            job_id = data.get("job_id", str(int(time.time())))
+            os.makedirs(os.path.join(REPO, "static", "audio"), exist_ok=True)
+
+            wav_16k = os.path.join(REPO, "static", "audio", f"reply_{job_id}_16k.wav")
+            npy_tmp = os.path.join(REPO, "static", "audio", f"reply_{job_id}.npy")
+
+            PB = os.path.join(
+                REPO, "data_utils", "deepspeech_features", "models",
+                "deepspeech-0_1_0-b90017e8.pb"
             )
-            
-            print("命令标准输出:", result.stdout)
-            if result.stderr:
-                print("命令标准错误:", result.stderr)
-            
-            # 文件原路径与目的路径 
-            model_dir_name = os.path.basename(data['model_param'])
-            source_path = os.path.join("SyncTalk", "model", model_dir_name, "results", "test_audio.mp4")
-            audio_name = os.path.splitext(os.path.basename(data['ref_audio']))[0]
-            video_filename = f"{model_dir_name}_{audio_name}.mp4"
-            destination_path = os.path.join("static", "videos", video_filename)
-            # 检查文件是否存在
-            if os.path.exists(source_path):
-                shutil.copy(source_path, destination_path)
-                print(f"[backend.video_generator] 视频生成完成，路径：{destination_path}")
-                return destination_path
-            else:
-                print(f"[backend.video_generator] 视频文件不存在: {source_path}")
-                # 尝试查找任何新生成的mp4文件
-                results_dir = os.path.join("SyncTalk", "model", model_dir_name, "results")
-                if os.path.exists(results_dir):
-                    mp4_files = [f for f in os.listdir(results_dir) if f.endswith('.mp4')]
-                    if mp4_files:
-                        latest_file = max(mp4_files, key=lambda f: os.path.getctime(os.path.join(results_dir, f)))
-                        source_path = os.path.join(results_dir, latest_file)
-                        shutil.copy(source_path, destination_path)
-                        print(f"[backend.video_generator] 找到最新视频文件: {destination_path}")
-                        return destination_path
-                
-                return os.path.join("static", "videos", "out.mp4")
-            
+
+            # (0) 简单校验，早死早爽
+            if not os.path.exists(tts_wav):
+                raise FileNotFoundError(f"tts_wav 不存在: {tts_wav}")
+            if not os.path.isdir(source_path):
+                raise FileNotFoundError(f"source_path 不存在或不是目录: {source_path}")
+            if not os.path.exists(PB):
+                raise FileNotFoundError(f"DeepSpeech pb 不存在: {PB}")
+
+            # (1) ffmpeg 转 16k mono s16
+            cmd_ffmpeg = [
+                "ffmpeg", "-y", "-loglevel", "error",
+                "-i", tts_wav,
+                "-ar", "16000", "-ac", "1", "-sample_fmt", "s16",
+                wav_16k
+            ]
+            r = subprocess.run(cmd_ffmpeg, check=True, cwd=REPO, text=True, capture_output=True)
+            if r.stdout:
+                print("[ffmpeg stdout]\n", r.stdout[-2000:])
+            if r.stderr:
+                print("[ffmpeg stderr]\n", r.stderr[-2000:])
+
+            # (2) 提取 deepspeech 特征 -> npy_tmp
+            cmd_ds = [
+                "bash", "-lc",
+                f"PYTHONPATH={REPO} conda run -n egstalker_tf_py39 "
+                f"python {REPO}/tools/extract_deepspeech_aud.py "
+                f"--wav {wav_16k} --out_npy {npy_tmp} --pb {PB}"
+            ]
+            r = subprocess.run(cmd_ds, check=True, cwd=REPO, text=True, capture_output=True)
+            if r.stdout:
+                print("[ds stdout]\n", r.stdout[-2000:])
+            if r.stderr:
+                print("[ds stderr]\n", r.stderr[-2000:])
+
+            # (3) custom_aud 放到 source_path 根目录
+            npy_name = f"reply_{job_id}.npy"
+            npy_for_render = os.path.join(source_path, npy_name)
+            shutil.copy(npy_tmp, npy_for_render)
+            print("[OK] wrote custom_aud:", npy_for_render)
+
+            # (4) render
+            cmd_render = [
+                "python", "render.py",
+                "--configs", configs,
+                "--model_path", model_path,
+                "--source_path", source_path,
+                "--batch", str(data.get("batch", 16)),
+                "--iteration", str(data.get("iteration", -1)),
+                "--skip_train", "--skip_test",
+                "--custom_aud", npy_name,
+                "--custom_wav", wav_16k,
+            ]
+            r = subprocess.run(cmd_render, check=True, cwd=EG_ROOT, text=True, capture_output=True)
+            if r.stdout:
+                print("[render stdout]\n", r.stdout[-2000:])
+            if r.stderr:
+                print("[render stderr]\n", r.stderr[-2000:])
+
+            # (5) 找输出 mp4（递归找最新 with_audio）
+            search_root = os.path.join(model_path, "custom")
+            latest_mp4, latest_t = None, -1
+            for root, _, files in os.walk(search_root):
+                for f in files:
+                    if f.endswith(".mp4") and "with_audio" in f:
+                        p = os.path.join(root, f)
+                        t = os.path.getctime(p)
+                        if t > latest_t:
+                            latest_t, latest_mp4 = t, p
+
+            if not latest_mp4:
+                raise RuntimeError(f"没找到渲染输出 mp4, search_root={search_root}")
+
+            os.makedirs(os.path.join(REPO, "static", "videos"), exist_ok=True)
+            out_name = f"egstalker_{job_id}.mp4"
+            destination_path = os.path.join("static", "videos", out_name)
+            shutil.copy(latest_mp4, os.path.join(REPO, destination_path))
+            print("[OK] video:", destination_path)
+            return destination_path
+
         except subprocess.CalledProcessError as e:
+            print("STDOUT:\n", e.stdout)
+            print("STDERR:\n", e.stderr)
             print(f"[backend.video_generator] 命令执行失败: {e}")
-            print("错误输出:", e.stderr)
             return os.path.join("static", "videos", "out.mp4")
         except Exception as e:
             print(f"[backend.video_generator] 其他错误: {e}")
             return os.path.join("static", "videos", "out.mp4")
-    
+
     video_path = os.path.join("static", "videos", "out.mp4")
     print(f"[backend.video_generator] 视频生成完成，路径：{video_path}")
     return video_path

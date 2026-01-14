@@ -1,378 +1,632 @@
 <!DOCTYPE html>
-<html lang="zh">
-
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>实时对话系统</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>实时对话系统</title>
 
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-        }
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-        .video-page-container {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
+  <style>
+    :root{
+      --bg:#f5f5f5;
+      --card:#ffffff;
+      --muted:#7f8c8d;
+      --border:#eee;
+      --shadow:0 4px 12px rgba(0,0,0,0.10);
+      --blue:#3498db;
+      --green:#2ecc71;
+      --red:#e74c3c;
+      --text:#2c3e50;
+    }
 
-        .video-display {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    body{
+      font-family: "Microsoft YaHei", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      margin:0;
+      padding:20px;
+      color:#333;
+    }
 
-        .video-display video {
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
-        }
+    h2{
+      text-align:center;
+      margin: 6px 0 18px;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
 
-        .form-section {
-            flex: 1;
-            padding: 20px;
-            background: #f9f9f9;
-            border-left: 1px solid #eee;
-        }
+    .layout{
+      max-width: 1280px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      min-height: 620px;
+    }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    .left{
+      flex: 1;
+      padding: 18px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:center;
+      justify-content:flex-start;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-        }
+    .right{
+      flex: 1;
+      padding: 18px;
+      background:#f9f9f9;
+      border-left: 1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-height:0;
+    }
 
-        select, input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+    /* ===== Cards ===== */
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
 
-        .generate-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
+    .card-title{
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
 
-        .generate-btn:hover {
-            background-color: #2980b9;
-        }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
 
-        .voice-recorder {
-            margin-top: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+    /* ===== Voice Recorder ===== */
+    .voice-recorder{
+      width:100%;
+      max-width:560px;
+      text-align:center;
+    }
 
-        .recorder-title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
+    .record-btn{
+      padding: 12px 22px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      cursor:pointer;
+      transition: all .2s;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      font-size: 15px;
+      font-weight: 650;
+    }
 
-        .record-btn {
-            padding: 12px 24px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 0 auto 15px;
-        }
+    .record-btn:hover{ filter: brightness(0.95); transform: scale(1.02); }
 
-        .record-btn:hover {
-            background-color: #c0392b;
-            transform: scale(1.05);
-        }
+    .record-btn.recording{
+      background: var(--green);
+      animation: pulse 1.5s infinite;
+    }
 
-        .record-btn.recording {
-            background-color: #2ecc71;
-            animation: pulse 1.5s infinite;
-        }
+    @keyframes pulse{
+      0%{ box-shadow: 0 0 0 0 rgba(46,204,113,0.65); }
+      70%{ box-shadow: 0 0 0 10px rgba(46,204,113,0); }
+      100%{ box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+    }
 
-        .record-btn.recording:hover {
-            background-color: #27ae60;
-        }
+    .timer{
+      font-size: 22px;
+      font-weight: 800;
+      margin: 10px 0 6px;
+      color: var(--text);
+    }
 
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
-            }
-        }
+    .recording-indicator{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin: 6px 0;
+    }
 
-        .timer {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 15px 0;
-        }
+    .recording-dot{
+      width: 12px;
+      height: 12px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+    }
 
-        .recording-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
+    @keyframes blink{
+      0%,50%{ opacity: 1; }
+      51%,100%{ opacity: 0; }
+    }
 
-        .recording-dot {
-            width: 12px;
-            height: 12px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            animation: blink 1.5s infinite;
-        }
+    .status-message{
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+      word-break: break-word;
+    }
 
-        @keyframes blink {
-            0%, 50% {
-                opacity: 1;
-            }
-            51%, 100% {
-                opacity: 0;
-            }
-        }
+    /* ===== Video ===== */
+    video{
+      width: 560px;
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+      background:#000;
+    }
 
-        .status-message {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-    </style>
+    /* ===== Controls ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    label{
+      font-weight: 750;
+      color:#555;
+      font-size: 13px;
+    }
+
+    input, select, textarea{
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      outline: none;
+      box-sizing:border-box;
+      background:#fff;
+    }
+
+    textarea{ resize: vertical; min-height: 64px; }
+
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    .btn{
+      border:none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 750;
+      transition: all .15s;
+      white-space:nowrap;
+    }
+
+    .btn-primary{ background: var(--blue); color:#fff; }
+    .btn-primary:hover{ filter: brightness(0.95); }
+
+    .btn-green{ background: var(--green); color:#fff; }
+    .btn-green:hover{ filter: brightness(0.95); }
+
+    .btn-ghost{
+      background:#fff;
+      border:1px solid #ddd;
+      color:#444;
+    }
+    .btn-ghost:hover{ background:#fafafa; }
+
+    .btn:disabled{ opacity: .6; cursor:not-allowed; }
+
+    /* ===== Chat ===== */
+    .chat-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:0;
+      flex:1;
+    }
+
+    .chat-messages{
+      flex:1;
+      min-height: 280px;
+      overflow-y:auto;
+      background:#fafafa;
+      border:1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .msg{ display:flex; margin:8px 0; }
+    .msg-user{ justify-content:flex-end; }
+    .msg-assistant{ justify-content:flex-start; }
+
+    .bubble{
+      max-width: 78%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 14px;
+    }
+
+    .msg-user .bubble{
+      background: var(--blue);
+      color:#fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-assistant .bubble{
+      background: #fff;
+      border:1px solid #e8e8e8;
+      color:#333;
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble-thinking{
+      opacity:.72;
+      font-style: italic;
+    }
+
+    .chat-input-row{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    #chatInput{
+      flex:1;
+      min-height: 42px;
+      max-height: 160px;
+    }
+
+    .small{
+      font-size:12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px){
+      .layout{ flex-direction: column; }
+      .right{ border-left:none; border-top:1px solid var(--border); }
+      video{ width: 100%; }
+    }
+  </style>
 </head>
 
 <body class="subpage-bg">
-    <h2>实时对话系统</h2>
-    <div class="video-page-container">
-        <div class="video-display">
-            <!-- 语音录制器 -->
-            <div class="voice-recorder">
-                <button id="recordButton" class="record-btn">
-                    <span>●</span> 开始录音
-                </button>
-                <div class="timer" id="timer">00:00</div>
-                <div class="recording-indicator" id="recordingIndicator" style="display: none;">
-                    <div class="recording-dot"></div>
-                    <span>正在录音...</span>
-                </div>
-                <div class="status-message" id="statusMessage">准备录音</div>
-            </div>
-            <!-- 左侧视频显示 -->
-            <video id="chatVideo" controls width="420">
-                <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
-            </video>
+  <h2>实时对话系统</h2>
+
+  <div class="layout">
+    <!-- ========== Left: Voice + Video ========== -->
+    <div class="left">
+      <div class="card voice-recorder">
+        <div class="card-title">
+          <span>语音输入</span>
+          <span class="hint">Edge/Chrome Web Speech</span>
         </div>
 
-        <!-- 右侧参数区 -->
-        <div class="form-section">
-            <form id="chatForm">
-                <div class="form-group">
-                    <label>模型名称</label>
-                    <select name="model_name">
-                        <option value="model1">Model 1</option>
-                        <option value="model2">Model 2</option>
-                        <option value="SyncTalk">SyncTalk</option>
-                    </select>
-                </div>
+        <button id="recordButton" class="record-btn" type="button">
+          <span>●</span> 开始录音
+        </button>
 
-                <div class="form-group">
-                    <label>模型目录地址</label>
-                    <input type="text" name="model_param" placeholder="请输入模型目录路径">
-                </div>
+        <div class="timer" id="timer">00:00</div>
 
-                <div class="form-group">
-                    <label>语音克隆模型名称</label>
-                    <select name="voice_clone">
-                        <option value="cloneA">Voice Clone A</option>
-                        <option value="cloneB">Voice Clone B</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>对话API选择</label>
-                    <select name="api_choice">
-                        <option value="openai">OpenAI API</option>
-                        <option value="azure">Azure Speech API</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="generate-btn">🎤 开始对话</button>
-            </form>
+        <div class="recording-indicator" id="recordingIndicator">
+          <div class="recording-dot"></div>
+          <span>正在录音...</span>
         </div>
+
+        <div class="status-message" id="statusMessage">准备录音</div>
+
+        <div class="small" style="margin-top:10px; text-align:left;">
+          若提示 <b>not-allowed</b>：请在地址栏权限里允许麦克风；并尽量使用 <b>localhost/HTTPS</b>。企业策略禁用时需改用“录音上传后端 ASR”方案。
+        </div>
+      </div>
+
+      <div class="card" style="width:100%; max-width:560px;">
+        <div class="card-title">
+          <span>视频显示</span>
+          <span class="hint">static/videos/sample.mp4</span>
+        </div>
+
+        <video id="chatVideo" controls>
+          <source src="{{ url_for('static', filename='videos/sample.mp4') }}" type="video/mp4">
+        </video>
+
+        <div class="small" id="videoHint" style="margin-top:8px;"></div>
+      </div>
     </div>
 
-    <script>
-        // 语音录制功能
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-        let startTime;
-        let timerInterval;
-        
-        const recordButton = document.getElementById('recordButton');
-        const timerDisplay = document.getElementById('timer');
-        const recordingIndicator = document.getElementById('recordingIndicator');
-        const statusMessage = document.getElementById('statusMessage');
-        
-        // 格式化时间显示
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        // 更新计时器
-        function updateTimer() {
-            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-            timerDisplay.textContent = formatTime(elapsedSeconds);
-        }
-        
-        // 开始录音
-        async function startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-                
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    
-                    // 创建FormData并发送到服务器
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, 'input.wav');
-                    
-                    fetch('/save_audio', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            statusMessage.textContent = '录音已结束';
-                        } else {
-                            statusMessage.textContent = '保存录音失败';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('保存录音错误:', error);
-                        statusMessage.textContent = '保存录音时出错';
-                    });
-                    
-                    // 停止所有音频轨道
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                
-                mediaRecorder.start();
-                isRecording = true;
-                recordButton.innerHTML = '<span>■</span> 停止录音';
-                recordButton.classList.add('recording');
-                recordingIndicator.style.display = 'flex';
-                statusMessage.textContent = '正在录音...';
-                
-                // 启动计时器
-                startTime = Date.now();
-                timerInterval = setInterval(updateTimer, 1000);
-                
-            } catch (error) {
-                console.error('获取麦克风权限失败:', error);
-                statusMessage.textContent = '无法访问麦克风，请检查权限设置';
-            }
-        }
-        
-        // 停止录音
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                recordButton.innerHTML = '<span>●</span> 开始录音';
-                recordButton.classList.remove('recording');
-                recordingIndicator.style.display = 'none';
-                statusMessage.textContent = '录音完成，正在保存...';
-                
-                // 停止计时器
-                clearInterval(timerInterval);
-            }
-        }
-        
-        // 录音按钮点击事件
-        recordButton.addEventListener('click', () => {
-            if (!isRecording) {
-                startRecording();
-            } else {
-                stopRecording();
-            }
-        });
-        
-        document.getElementById('chatForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const formData = new FormData(this);
+    <!-- ========== Right: Controls + Chat ========== -->
+    <div class="right">
+      <div class="card">
+        <div class="card-title">
+          <span>推理设置</span>
+          <button id="btnReset" class="btn btn-ghost" type="button">恢复默认</button>
+        </div>
 
-            fetch('/chat_system', {
-                method: 'POST',
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const videoEl = document.getElementById('chatVideo');
-                        const newSrc = data.video_path + '?t=' + new Date().getTime();
-                        videoEl.src = newSrc;
-                        videoEl.load();
-                        videoEl.play();
-                        alert('对话完成！');
-                    }
-                })
-                .catch(err => console.error('错误:', err));
+        <div class="grid">
+          <div class="field">
+            <label for="modelSelect">模型（可自定义）</label>
+            <input id="modelSelect" list="modelList" placeholder="例如：gpt-4.1 / your-model" />
+            <datalist id="modelList">
+              <option value="gpt-4.1"></option>
+              <option value="gpt-4.1-mini"></option>
+              <option value="deepseek-chat"></option>
+              <option value="qwen2.5"></option>
+            </datalist>
+          </div>
+
+          <div class="field">
+            <label for="temperature">Temperature (0~2)</label>
+            <input id="temperature" type="number" min="0" max="2" step="0.1" />
+          </div>
+
+          <div class="field">
+            <label for="topP">Top-p (0~1)</label>
+            <input id="topP" type="number" min="0" max="1" step="0.05" />
+          </div>
+
+          <div class="field">
+            <label for="maxTokens">Max tokens</label>
+            <input id="maxTokens" type="number" min="1" max="8192" step="1" />
+          </div>
+
+          <div class="field">
+            <label for="presencePenalty">Presence penalty (-2~2)</label>
+            <input id="presencePenalty" type="number" min="-2" max="2" step="0.1" />
+          </div>
+
+          <div class="field">
+            <label for="frequencyPenalty">Frequency penalty (-2~2)</label>
+            <input id="frequencyPenalty" type="number" min="-2" max="2" step="0.1" />
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:10px;">
+          <label for="systemPrompt">系统提示词（System Prompt）</label>
+          <textarea id="systemPrompt" placeholder="例如：你是一个耐心、简洁的助手。"></textarea>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="btnApply" class="btn btn-primary" type="button">应用到本次会话</button>
+          <span class="small" id="applyHint">参数会随每次发送一并提交到 /api/chat/avatar</span>
+        </div>
+      </div>
+
+      <div class="card chat-wrap">
+        <div class="card-title">
+          <span>文字对话</span>
+          <span class="hint" id="apiHint">POST /api/chat/avatar</span>
+        </div>
+
+        <div id="chatMessages" class="chat-messages"></div>
+
+        <div class="chat-input-row">
+          <textarea id="chatInput" placeholder="输入文本并发送（或用左侧语音）"></textarea>
+          <button id="sendBtn" class="btn btn-green" type="button">发送</button>
+        </div>
+
+        <div class="small" id="chatStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // =========================
+      // 默认配置
+      // =========================
+      const DEFAULTS = {
+        model: "gpt-4.1-mini",
+        temperature: 0.7,
+        top_p: 1.0,
+        max_tokens: 512,
+        presence_penalty: 0.0,
+        frequency_penalty: 0.0,
+        system_prompt: ""
+      };
+
+      // =========================
+      // 获取 DOM 元素
+      // =========================
+      const modelSelect = document.getElementById("modelSelect");
+      const temperatureEl = document.getElementById("temperature");
+      const topPEl = document.getElementById("topP");
+      const maxTokensEl = document.getElementById("maxTokens");
+      const presenceEl = document.getElementById("presencePenalty");
+      const frequencyEl = document.getElementById("frequencyPenalty");
+      const systemPromptEl = document.getElementById("systemPrompt");
+      const btnReset = document.getElementById("btnReset");
+      const btnApply = document.getElementById("btnApply");
+      const applyHint = document.getElementById("applyHint");
+      const chatMessages = document.getElementById("chatMessages");
+      const chatInput = document.getElementById("chatInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const chatStatus = document.getElementById("chatStatus");
+      const videoEl = document.getElementById("chatVideo");
+      const videoHint = document.getElementById("videoHint");
+      const recordButton = document.getElementById("recordButton");
+      const timerEl = document.getElementById("timer");
+      const indicatorEl = document.getElementById("recordingIndicator");
+      const statusEl = document.getElementById("statusMessage");
+
+      // =========================
+      // 工具函数
+      // =========================
+      function setChatStatus(t) { chatStatus.textContent = t || ""; }
+      function setVoiceStatus(t) { statusEl.textContent = t || ""; }
+      function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+      function appendMessage(role, text, extraClass = "") {
+        const row = document.createElement("div");
+        row.className = "msg " + (role === "user" ? "msg-user" : "msg-assistant");
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + (extraClass || "");
+        bubble.textContent = text;
+        row.appendChild(bubble);
+        chatMessages.appendChild(row);
+        scrollToBottom();
+        return bubble;
+      }
+
+      function loadDefaults() {
+        modelSelect.value = DEFAULTS.model;
+        temperatureEl.value = DEFAULTS.temperature;
+        topPEl.value = DEFAULTS.top_p;
+        maxTokensEl.value = DEFAULTS.max_tokens;
+        presenceEl.value = DEFAULTS.presence_penalty;
+        frequencyEl.value = DEFAULTS.frequency_penalty;
+        systemPromptEl.value = DEFAULTS.system_prompt;
+      }
+
+      function getParams() {
+        return {
+          model: modelSelect.value || DEFAULTS.model,
+          temperature: parseFloat(temperatureEl.value) || DEFAULTS.temperature,
+          top_p: parseFloat(topPEl.value) || DEFAULTS.top_p,
+          max_tokens: parseInt(maxTokensEl.value) || DEFAULTS.max_tokens,
+          presence_penalty: parseFloat(presenceEl.value) || DEFAULTS.presence_penalty,
+          frequency_penalty: parseFloat(frequencyEl.value) || DEFAULTS.frequency_penalty,
+          system_prompt: systemPromptEl.value || DEFAULTS.system_prompt
+        };
+      }
+
+      // =========================
+      // 核心业务逻辑
+      // =========================
+async function sendTextMessage(text, source = "text") {
+  const clean = (text || "").trim();
+  if (!clean) return;
+
+  setChatStatus("");
+  appendMessage("user", clean);
+  const thinking = appendMessage("assistant", "任务已提交，请稍候...", "bubble-thinking");
+  sendBtn.disabled = true;
+
+  try {
+    const params = getParams();
+    // 1. 提交任务，获取 job_id
+    const resp = await fetch("/api/chat/avatar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: clean, ...params })
+    });
+
+    if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`服务器返回错误 (${resp.status}): ${errorText.substring(0, 100)}`);
+    }
+    const { job_id } = await resp.json();
+
+    // 2. 开始轮询状态
+    const pollTimer = setInterval(async () => {
+      const statusResp = await fetch(`/api/chat/job_status/${job_id}`);
+      const job = await statusResp.json();
+
+      if (job.status === "completed") {
+        clearInterval(pollTimer); // 停止轮询
+        
+        // 更新文字和视频
+        thinking.textContent = job.assistant_text;
+        thinking.classList.remove("bubble-thinking");
+        
+        videoEl.src = job.video_url + "?t=" + Date.now();
+        videoEl.load();
+        videoEl.play().catch(e => console.warn("播放受限:", e));
+        
+        setChatStatus(`生成成功（模型：${params.model}）`);
+        sendBtn.disabled = false;
+      } else if (job.status === "failed") {
+        clearInterval(pollTimer);
+        thinking.textContent = "生成失败: " + job.error;
+        thinking.classList.remove("bubble-thinking");
+        sendBtn.disabled = false;
+      } else {
+        // 还在处理中，可以更新一下提示文字
+        thinking.textContent = "奥巴马正在思考并画图中...";
+      }
+    }, 3000); // 每 3 秒查询一次
+
+  } catch (err) {
+    thinking.textContent = "提交出错：" + err.message;
+    thinking.classList.remove("bubble-thinking");
+    sendBtn.disabled = false;
+  }
+}
+
+      // =========================
+      // 事件绑定
+      // =========================
+      sendBtn.addEventListener("click", () => {
+        const t = chatInput.value;
+        chatInput.value = "";
+        sendTextMessage(t, "text");
+      });
+
+      chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendBtn.click();
+        }
+      });
+
+      btnReset.addEventListener("click", loadDefaults);
+
+      // =========================
+      // 语音识别 (Web Speech API)
+      // =========================
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        recordButton.disabled = true;
+        setVoiceStatus("浏览器不支持语音识别，请使用 Edge/Chrome 并确保 HTTPS 环境。");
+      } else {
+        const rec = new SpeechRecognition();
+        rec.lang = "zh-CN";
+        rec.onstart = () => {
+          recordButton.classList.add("recording");
+          recordButton.textContent = "停止录音";
+          setVoiceStatus("正在听...");
+        };
+        rec.onresult = (e) => {
+          const text = e.results[0][0].transcript;
+          setVoiceStatus("识别到：" + text);
+          sendTextMessage(text, "voice");
+        };
+        rec.onend = () => {
+          recordButton.classList.remove("recording");
+          recordButton.textContent = "开始录音";
+        };
+        rec.onerror = (e) => setVoiceStatus("识别错误: " + e.error);
+        
+        recordButton.addEventListener("click", () => {
+          try { rec.start(); } catch(e) { rec.stop(); }
         });
-    </script>
+      }
+
+      // 初始化
+      loadDefaults();
+      console.log("✅ 实时对话系统 JS 加载完成");
+    })();
+  </script>
 </body>
-
 </html>

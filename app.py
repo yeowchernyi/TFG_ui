@@ -1,4 +1,4 @@
-# app.py
+# app.py - 完整修复版本（含 /api/chat/avatar + edge-tts -> wav -> EGSTalker）
 from flask import Flask, render_template, request, jsonify, send_file, session
 import os
 import sys
@@ -583,14 +583,14 @@ def video_generation():
                 video_name = f"gen_{job_id}.mp4"
                 # 使用你代码里定义的 GEN_VIDEO_DIR
                 save_path = os.path.join(GEN_VIDEO_DIR, video_name)
-
+                
                 with open(save_path, 'wb') as v_file:
                     v_file.write(r.content)
-
+                
                 print(f"[SUCCESS] 视频生成成功: {save_path}")
                 # 返回给前端展示
                 return jsonify({
-                    "status": "success",
+                    "status": "success", 
                     "video_path": f"/static/generated_videos/{video_name}"
                 })
             else:
@@ -921,28 +921,28 @@ def background_avatar_task(job_id, user_text, system_prompt, max_new_tokens):
         result = reply_text(user_text, system_prompt=system_prompt, max_new_tokens=max_new_tokens)
         assistant_text = result["assistant_text"]
         jobs[job_id]["assistant_text"] = assistant_text
-
+        
         # 2) TTS
         wav_path = tts_to_wav(assistant_text)
-
+        
         # 3) EGSTalker 推理
         with open(wav_path, "rb") as f:
             files = {"audio": ("speech.wav", f, "audio/wav")}
             r = requests.post(EGS_INFER_URL, files=files, timeout=1200)
-
+        
         if r.status_code == 200:
             video_name = f"avatar_{job_id}.mp4"
             video_path = os.path.join(GEN_VIDEO_DIR, video_name)
             with open(video_path, "wb") as vf:
                 vf.write(r.content)
-
+            
             # 标记完成
             jobs[job_id]["status"] = "completed"
             jobs[job_id]["video_url"] = f"/static/generated_videos/{video_name}"
         else:
             jobs[job_id]["status"] = "failed"
             jobs[job_id]["error"] = "数字人渲染失败"
-
+            
     except Exception as e:
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
@@ -960,7 +960,7 @@ def api_chat_avatar():
 
     # 启动后台线程
     thread = threading.Thread(
-        target=background_avatar_task,
+        target=background_avatar_task, 
         args=(job_id, user_text, system_prompt, max_new_tokens)
     )
     thread.start()
@@ -1181,7 +1181,7 @@ if __name__ == '__main__':
 
     cert_path = os.path.expanduser("~/certs/cert.pem")
     key_path = os.path.expanduser("~/certs/key.pem")
-
+    
     ssl_args = {}
     if os.path.exists(cert_path) and os.path.exists(key_path):
         ssl_args['ssl_context'] = (cert_path, key_path)

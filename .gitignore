@@ -53,3 +53,7 @@ GPT-SoVITS/
 
 test_data/
 >>>>>>> target/dev-EGSTalker
+.venv/
+.venv_off/
+__pycache__/
+*.log

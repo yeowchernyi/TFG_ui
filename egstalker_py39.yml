@@ -364,3 +364,4 @@ dependencies:
       - wrapt==1.14.2
       - yapf==0.43.0
       - yarl==1.22.0
+prefix: /home/xsj/.conda/envs/egstalker_py39

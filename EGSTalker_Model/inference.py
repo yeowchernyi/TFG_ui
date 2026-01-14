@@ -77,11 +77,11 @@ def main():
         os.path.join(args.model_path, "**", "*.mp4"),
         os.path.join(BASE_DIR, "EGSTalker", "result-video", "*.mp4")
     ]
-
+    
     found_files = []
     for pattern in search_patterns:
         found_files.extend(glob.glob(pattern, recursive=True))
-
+    
     if not found_files:
         # 最后尝试在整个 model_path 下找最近修改的文件
         all_files = glob.glob(os.path.join(args.model_path, "**", "*.*"), recursive=True)
@@ -106,3 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

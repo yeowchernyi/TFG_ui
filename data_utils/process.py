@@ -50,7 +50,13 @@ def extract_audio_features(path, mode='wav2vec'):
         cmd = f'python data_utils/deepspeech_features/extract_ds_features.py --input {path}'
     os.system(cmd)
     import shutil
-    shutil.copy(path.replace('.wav', '.npy'), path.replace('.wav', '_ds.npy'))
+    src = path.replace('.wav', '.npy')
+    dst = path.replace('.wav', '_ds.npy')
+    if os.path.exists(src):
+        shutil.copy(src, dst)
+    else:
+        raise RuntimeError(f"ASR feature extraction failed, missing: {src}")
+
     print(f'[INFO] ===== extracted audio labels =====')
 
 
