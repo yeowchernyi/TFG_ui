@@ -1,59 +1,60 @@
-*.pyc
-.vscode
-output
-build
-diff_rasterization/diff_rast.egg-info
-diff_rasterization/dist
-tensorboard_3d
-screenshots
-data/
-data
-wandb/
-
-*.jpg
-*.mp4
-*.pth
-
-render_orig.py
-
-
-# Added by Copilot
-pytorch3d_source/
-pytorch3d-main/
-Open3D-0.17.0/
-*.mat
-*.npy
-*.pt
-*.ply
-*.obj
-test_*.py
-check_*.py
-create_dummy_au.py
-
-datasets/
-
-credentials.csv
-
-run.log
-
-.DS_Store
-
-# Python
+# --- 系统与 Python 缓存 ---
 __pycache__/
 *.py[cod]
 *.so
 .Python
+.DS_Store
+*.log
+.venv/
+.venv_off/
+
+# --- 编辑器与临时备份 (重点添加) ---
+.vscode/
+*.save
+*.save.*
+*.bak
+*.swp
+.app.py.swp
+*~
+
+# --- 构建与分发文件 ---
 build/
 dist/
 *.egg-info/
+diff_rasterization/diff_rast.egg-info/
+diff_rasterization/dist/
 
+# --- 大文件、模型与数据集 (防止再次触发 GitHub 100MB 限制) ---
+data/
+datasets/
+output/
+tensorboard_3d/
+wandb/
+screenshots/
+*.pth
+*.pt
+*.mat
+*.npy
+*.ply
+*.obj
+*.jpg
+*.mp4
+*.pb
+
+# --- 项目特定文件夹与第三方库 ---
 SyncTalk/SyncTalk/
-
 GPT-SoVITS/
-
 test_data/
->>>>>>> target/dev-EGSTalker
-.venv/
-.venv_off/
-__pycache__/
-*.log
+pytorch3d_source/
+pytorch3d-main/
+Open3D-0.17.0/
+Qwen/
+
+# --- 临时测试脚本 ---
+render_orig.py
+test_*.py
+check_*.py
+create_dummy_au.py
+credentials.csv
+run.log
+snapshot_fw.dump
