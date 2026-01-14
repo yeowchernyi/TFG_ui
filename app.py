@@ -1,4 +1,4 @@
-# app.py - 整理修复版
+# app.py
 from flask import Flask, render_template, request, jsonify, send_file, session
 import os
 import sys
@@ -13,28 +13,35 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import signal
 from pathlib import Path
+import requests
+
+from backend.qwen_engine import qwen
+from backend.text_chat_engine import reply_text
+
+
+# =========================
+# Global Config
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EGS_INFER_URL = "http://127.0.0.1:5002/infer"   # EGSTalker_Model/app.py
+GEN_VIDEO_DIR = os.path.join(BASE_DIR, "static", "generated_videos")
+GEN_AUDIO_DIR = os.path.join(BASE_DIR, "static", "generated_audios")
+os.makedirs(GEN_VIDEO_DIR, exist_ok=True)
+os.makedirs(GEN_AUDIO_DIR, exist_ok=True)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+jobs = {}
 
 # 创建Flask应用
 app = Flask(__name__)
-
-
-# ========== 测试路由 ==========
-@app.route('/test-train-status/<task_id>', methods=['GET'])
-def test_train_status(task_id):
-    """测试路由 - 确认是否工作"""
-    return jsonify({
-        'message': '测试路由工作正常！',
-        'task_id': task_id,
-        'timestamp': datetime.now().isoformat()
-    })
-
-
+app.json.ensure_ascii = False
 app.secret_key = 'egstalker_secret_key_2024'
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 
 
-# ========== 确保所有目录存在 ==========
+# =========================
+# Directories
+# =========================
 def create_directories():
     """创建所有必要的目录"""
     directories = [
@@ -42,6 +49,8 @@ def create_directories():
         'static/uploads/training_videos',
         'static/uploads/audios',
         'static/videos',
+        'static/generated_videos',
+        'static/generated_audios',
         'configs',
         'output',
         'data',
@@ -50,16 +59,64 @@ def create_directories():
         'result-video'
     ]
 
-    for directory in directories:
-        os.makedirs(directory, exist_ok=True)
-        print(f"✓ 确保目录存在: {directory}")
-
+    for d in directories:
+        # 拼接成绝对路径
+        target_path = os.path.join(BASE_DIR, d)
+        os.makedirs(target_path, exist_ok=True)
+        print(f"✓ 确保目录存在: {target_path}")
 
 # 在应用启动时创建目录
 create_directories()
 
 
-# ========== 训练任务管理器 ==========
+# =========================
+# TTS (GLOBAL)  ✅关键修复：必须在全局
+# =========================
+def tts_to_wav(text: str, out_dir: str = GEN_AUDIO_DIR) -> str:
+    """
+    edge-tts: text -> mp3
+    ffmpeg: mp3 -> wav (16kHz, mono)
+    return: wav_path
+    """
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("TTS 输入文本为空")
+
+    os.makedirs(out_dir, exist_ok=True)
+
+    job_id = uuid.uuid4().hex[:8]
+    mp3_path = os.path.join(out_dir, f"tts_{job_id}.mp3")
+    wav_path = os.path.join(out_dir, f"tts_{job_id}.wav")
+
+    # 1) edge-tts 生成 mp3
+    cmd_tts = [
+        "edge-tts",
+        "--voice", "zh-CN-YunxiNeural",
+        "--text", text,
+        "--write-media", mp3_path,
+    ]
+    p = subprocess.run(cmd_tts, capture_output=True, text=True)
+    if p.returncode != 0 or (not os.path.exists(mp3_path)):
+        raise RuntimeError(f"edge-tts 失败: {p.stderr or p.stdout}")
+
+    # 2) ffmpeg 转成 16k 单声道 wav
+    cmd_ffmpeg = [
+        "ffmpeg", "-y",
+        "-i", mp3_path,
+        "-ac", "1",
+        "-ar", "16000",
+        wav_path
+    ]
+    p2 = subprocess.run(cmd_ffmpeg, capture_output=True, text=True)
+    if p2.returncode != 0 or (not os.path.exists(wav_path)):
+        raise RuntimeError(f"ffmpeg 转 wav 失败: {p2.stderr or p2.stdout}")
+
+    return wav_path
+
+
+# =========================
+# Training Manager
+# =========================
 class TrainingManager:
     def __init__(self):
         self.tasks = {}
@@ -115,7 +172,6 @@ class TrainingManager:
             # 3. 尝试查找视频文件
             actual_path = None
 
-            # 尝试可能的路径
             possible_paths = [
                 video_path,
                 os.path.abspath(video_path),
@@ -125,7 +181,6 @@ class TrainingManager:
                 os.path.join(os.getcwd(), video_path.lstrip('/').lstrip('\\'))
             ]
 
-            # 去重
             possible_paths = list(dict.fromkeys(possible_paths))
 
             for path in possible_paths:
@@ -135,13 +190,12 @@ class TrainingManager:
                     break
 
             if not actual_path:
-                # 列出上传目录帮助调试
                 upload_dir = 'static/uploads/videos'
                 if os.path.exists(upload_dir):
                     files = os.listdir(upload_dir)
                     self._add_log(task, f"上传目录内容: {', '.join(files[:5])}")
 
-                raise FileNotFoundError(f"❌ 无法找到视频文件。请检查上传是否成功。")
+                raise FileNotFoundError("❌ 无法找到视频文件。请检查上传是否成功。")
 
             video_path = actual_path
 
@@ -192,11 +246,9 @@ class TrainingManager:
             if config.get('preprocess', True):
                 self._add_log(task, "开始视频预处理...")
 
-                # 创建frames目录
                 frames_dir = os.path.join(data_dir, 'frames')
                 os.makedirs(frames_dir, exist_ok=True)
 
-                # 提取视频帧
                 cap = cv2.VideoCapture(dest_video_path)
                 frame_count = 0
 
@@ -205,7 +257,6 @@ class TrainingManager:
                     if not ret:
                         break
 
-                    # 调整大小为512x512
                     if frame.shape[0] != 512 or frame.shape[1] != 512:
                         frame = cv2.resize(frame, (512, 512))
 
@@ -213,7 +264,6 @@ class TrainingManager:
                     cv2.imwrite(frame_path, frame)
                     frame_count += 1
 
-                    # 更新进度
                     if frame_count % 50 == 0:
                         progress = 25 + (frame_count / 300 * 15)  # 假设最多300帧
                         task['progress'] = min(progress, 40)
@@ -221,7 +271,6 @@ class TrainingManager:
                 cap.release()
                 self._add_log(task, f"✅ 帧提取完成: {frame_count} 帧")
 
-                # 创建数据集配置
                 dataset_config = {
                     'name': config.get('model_name', 'untitled'),
                     'frames_dir': frames_dir,
@@ -248,7 +297,6 @@ class TrainingManager:
             model_path = os.path.abspath(model_path)
             self._add_log(task, f"💾 模型保存路径: {model_path}")
 
-            # 保存训练配置
             train_config = {
                 'task_id': task_id,
                 'model_name': model_name,
@@ -272,13 +320,11 @@ class TrainingManager:
             # 8. 开始训练
             self._add_log(task, "开始模型训练...")
 
-            # 🔥 强制使用模拟训练（避免依赖问题）
-            self._add_log(task, "🎭 使用模拟训练模式 - 跳过复杂依赖")
-            self._add_log(task, "📝 实际训练需要完整安装：torch, diff-gaussian-rasterization, lpips 等")
-            self._add_log(task, "⏰ 模拟训练将在后台运行...")
-
-            # 使用模拟训练
-            self._simulate_training(task_id, model_path, config.get('epochs', 100))
+            train_script = 'train.py'
+            if os.path.exists(train_script):
+                self._run_actual_training(task_id, data_dir, model_path, config)
+            else:
+                self._simulate_training(task_id, model_path, config.get('epochs', 100))
 
             # 9. 训练完成
             task['status'] = 'completed'
@@ -286,7 +332,6 @@ class TrainingManager:
             task['model_path'] = model_path
             task['end_time'] = datetime.now().isoformat()
 
-            # 保存训练摘要
             summary = {
                 'task_id': task_id,
                 'status': 'completed',
@@ -319,7 +364,6 @@ class TrainingManager:
             self._add_log(task, f"❌ 训练失败: {str(e)}")
             self._add_log(task, f"🔍 错误详情: {error_details[:500]}...")
 
-            # 保存错误日志
             error_log = {
                 'task_id': task_id,
                 'error': str(e),
@@ -336,7 +380,6 @@ class TrainingManager:
         """运行实际的训练脚本"""
         task = self.tasks[task_id]
 
-        # 构建训练命令
         train_cmd = [
             sys.executable, 'train.py',
             '-s', data_dir,
@@ -352,7 +395,6 @@ class TrainingManager:
 
         self._add_log(task, f"🚀 启动训练命令: {' '.join(train_cmd)}")
 
-        # 运行训练
         self._run_subprocess(task_id, train_cmd, "训练")
 
     def _simulate_training(self, task_id, model_path, epochs):
@@ -362,16 +404,13 @@ class TrainingManager:
         self._add_log(task, f"🎭 模拟训练模式，共 {epochs} 轮")
 
         for epoch in range(epochs):
-            # 更新进度
             progress = 50 + (epoch / epochs * 45)
             task['progress'] = progress
 
-            # 模拟损失
             loss = 0.8 * (0.95 ** epoch) + 0.1
-            log_msg = f"Epoch {epoch + 1:04d}/{epochs:04d} - Loss: {loss:.4f}"
+            log_msg = f"Epoch {epoch+1:04d}/{epochs:04d} - Loss: {loss:.4f}"
             self._add_log(task, log_msg)
 
-            # 每10轮保存检查点
             if (epoch + 1) % 10 == 0:
                 checkpoint = {
                     'epoch': epoch + 1,
@@ -380,7 +419,7 @@ class TrainingManager:
                     'model_version': '1.0'
                 }
 
-                checkpoint_path = os.path.join(model_path, f'checkpoint_{epoch + 1:04d}.pth')
+                checkpoint_path = os.path.join(model_path, f'checkpoint_{epoch+1:04d}.pth')
                 with open(checkpoint_path, 'w') as f:
                     json.dump(checkpoint, f, indent=2)
 
@@ -388,48 +427,34 @@ class TrainingManager:
 
             time.sleep(0.5)
 
-            # 检查是否被停止
             if task['status'] == 'stopped':
                 self._add_log(task, "⏹️ 训练被停止")
                 break
 
     def _run_subprocess(self, task_id, cmd, phase_name):
-        """运行子进程 - 修复编码问题"""
+        """运行子进程"""
         task = self.tasks[task_id]
 
         self._add_log(task, f"开始{phase_name}: {' '.join(cmd)}")
 
         try:
-            # 修复1: 设置环境变量，强制使用UTF-8编码
-            env = os.environ.copy()
-            env['PYTHONIOENCODING'] = 'utf-8'
-            env['PYTHONUTF8'] = '1'
-
-            # 修复2: 使用正确的编码参数
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,  # 使用文本模式
+                text=True,
                 bufsize=1,
                 universal_newlines=True,
-                encoding='utf-8',  # 明确指定编码
-                errors='replace',  # 遇到无法解码的字符用�替换
-                cwd=os.getcwd(),
-                env=env  # 使用修改后的环境变量
+                cwd=os.getcwd()
             )
 
             self.processes[task_id] = process
 
-            # 读取输出
             for line in process.stdout:
                 line = line.strip()
                 if line:
-                    # 清理可能的非法字符
-                    cleaned_line = ''.join(char for char in line if ord(char) < 65536)
-                    self._add_log(task, cleaned_line)
+                    self._add_log(task, line)
 
-                    # 尝试解析进度
                     if 'progress' in line.lower() or '%' in line:
                         try:
                             import re
@@ -440,7 +465,7 @@ class TrainingManager:
                                     task['progress'] = 50 + (percent * 0.45)
                                 elif phase_name == "预处理":
                                     task['progress'] = 25 + (percent * 0.2)
-                        except:
+                        except Exception:
                             pass
 
             process.wait()
@@ -462,7 +487,6 @@ class TrainingManager:
         log_entry = f"[{timestamp}] {message}"
         task['logs'].append(log_entry)
 
-        # 限制日志数量
         if len(task['logs']) > 1000:
             task['logs'] = task['logs'][-1000:]
 
@@ -484,7 +508,7 @@ class TrainingManager:
                 return f"{minutes}m {seconds}s"
             else:
                 return f"{seconds}s"
-        except:
+        except Exception:
             return "未知"
 
     def stop_training(self, task_id):
@@ -512,16 +536,74 @@ class TrainingManager:
 training_manager = TrainingManager()
 
 
-# ========== 路由定义 ==========
+# =========================
+# Routes: Pages
+# =========================
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
-@app.route('/video_generation')
+@app.route('/video_generation', methods=['GET', 'POST'])
 def video_generation():
-    return render_template('video_generation.html')
+    if request.method == 'POST':
+        # 1. 获取前端表单数据
+        target_text = request.form.get('target_text', '').strip()
+        ref_audio_path = request.form.get('ref_audio', '').strip()
+        model_name = request.form.get('model_name')
+        model_path = request.form.get('model_path') # 获取前端选中的模型路径
+        print(f"[DEBUG] 收到视频生成请求: 文本='{target_text}', 参考音频='{ref_audio_path}'")
 
+        try:
+            # 2. 确定最终使用的音频路径
+            final_wav_path = None
+
+            if target_text:
+                # 情况 A: 用户输入了文字 -> 调用你写好的 tts_to_wav
+                print(f"[DEBUG] 正在生成 TTS 语音...")
+                final_wav_path = tts_to_wav(target_text)
+            elif ref_audio_path and os.path.exists(ref_audio_path):
+                # 情况 B: 用户没写字，但提供了音频路径
+                final_wav_path = ref_audio_path
+            else:
+                return jsonify({"status": "error", "message": "请提供文字内容或有效的音频路径"}), 400
+
+            # 3. 将音频发送给 EGSTalker 渲染后端 (Port 5002)
+            print(f"[DEBUG] 正在请求渲染后端: {EGS_INFER_URL}")
+            with open(final_wav_path, 'rb') as f:
+                files = {'audio': (os.path.basename(final_wav_path), f, 'audio/wav')}
+                data_payload = {
+                    "model_path": model_path,
+                    # 如果你的渲染后端支持 source_path，也可以在这里传
+                }
+                r = requests.post(EGS_INFER_URL, files=files, data=data_payload, timeout=1200)
+
+            if r.status_code == 200:
+                # 4. 保存生成的视频到 static 目录
+                job_id = uuid.uuid4().hex[:8]
+                video_name = f"gen_{job_id}.mp4"
+                # 使用你代码里定义的 GEN_VIDEO_DIR
+                save_path = os.path.join(GEN_VIDEO_DIR, video_name)
+
+                with open(save_path, 'wb') as v_file:
+                    v_file.write(r.content)
+
+                print(f"[SUCCESS] 视频生成成功: {save_path}")
+                # 返回给前端展示
+                return jsonify({
+                    "status": "success",
+                    "video_path": f"/static/generated_videos/{video_name}"
+                })
+            else:
+                print(f"[ERROR] 后端返回错误: {r.status_code}")
+                return jsonify({"status": "error", "message": "渲染后端处理失败"}), 500
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    # 如果是 GET 请求，依然只显示页面
+    return render_template('video_generation.html')
 
 @app.route('/model_training', methods=['GET', 'POST'])
 def model_training():
@@ -531,19 +613,13 @@ def model_training():
             action = data.get('action')
 
             if action == 'start':
-                # 验证必要参数
                 if not data.get('video_path'):
-                    return jsonify({
-                        'status': 'error',
-                        'error': '视频路径不能为空'
-                    }), 400
+                    return jsonify({'status': 'error', 'error': '视频路径不能为空'}), 400
 
-                # 准备训练配置
                 config = {
                     'video_path': data['video_path'],
                     'model_name': data.get('model_name', f'model_{uuid.uuid4().hex[:6]}'),
-                    'model_path': data.get('model_path',
-                                           f'output/{data.get("model_name", f"model_{uuid.uuid4().hex[:6]}")}'),
+                    'model_path': data.get('model_path', f'output/{data.get("model_name", f"model_{uuid.uuid4().hex[:6]}")}'),
                     'data_dir': data.get('data_dir', f'data/train_{uuid.uuid4().hex[:6]}'),
                     'config_file': data.get('config_file', 'arguments/args.py'),
                     'epochs': int(data.get('epochs', 100)),
@@ -552,7 +628,6 @@ def model_training():
                     'advanced_config': data.get('advanced_config', {})
                 }
 
-                # 启动训练
                 task_id = training_manager.start_training(config)
 
                 return jsonify({
@@ -582,7 +657,6 @@ def model_training():
                     }
                 }
 
-                # 添加最近日志
                 if task.get('logs'):
                     response['task']['recent_logs'] = task['logs'][-20:]
 
@@ -614,23 +688,22 @@ def model_training():
 
                 return jsonify({'status': 'success', 'tasks': simplified_tasks})
 
-        # 保持兼容旧版本的表单提交
         return jsonify({'status': 'error', 'error': '不支持的请求格式'}), 400
 
     return render_template('model_training.html')
 
-
 @app.route('/chat_system')
 def chat_system():
     return render_template('chat_system.html')
-
 
 @app.route('/inference')
 def inference():
     return render_template('inference.html')
 
 
-# ========== API路由 ==========
+# =========================
+# API: Upload video
+# =========================
 @app.route('/api/upload/video', methods=['POST'])
 def api_upload_video():
     """上传视频文件 - 完整修复版"""
@@ -645,7 +718,6 @@ def api_upload_video():
         if file.filename == '':
             return jsonify({'success': False, 'error': '没有选择文件'}), 400
 
-        # 检查文件类型
         allowed_extensions = {'mp4', 'avi', 'mov', 'm4v', 'mpg', 'mpeg', 'webm'}
         file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
 
@@ -655,11 +727,9 @@ def api_upload_video():
                 'error': f'不支持的文件类型: .{file_ext}。支持: {", ".join(allowed_extensions)}'
             }), 400
 
-        # 创建上传目录
         upload_dir = 'static/uploads/videos'
         os.makedirs(upload_dir, exist_ok=True)
 
-        # 生成安全的文件名
         original_name = file.filename
         safe_name = secure_filename(original_name)
         unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
@@ -667,10 +737,8 @@ def api_upload_video():
 
         print(f"保存文件到: {file_path}")
 
-        # 保存文件
         file.save(file_path)
 
-        # 验证文件
         if not os.path.exists(file_path):
             return jsonify({'success': False, 'error': '文件保存失败'}), 500
 
@@ -679,7 +747,6 @@ def api_upload_video():
 
         print(f"文件保存成功: {file_size_mb:.2f} MB")
 
-        # 验证视频文件
         try:
             cap = cv2.VideoCapture(file_path)
             if not cap.isOpened():
@@ -691,17 +758,13 @@ def api_upload_video():
             duration = frame_count / fps if fps > 0 else 0
             cap.release()
 
-            # 检查视频时长
-            if duration > 600:  # 10分钟
+            if duration > 600:
                 os.remove(file_path)
                 return jsonify({'success': False, 'error': '视频太长，最大10分钟'}), 400
 
         except Exception as e:
             print(f"视频验证失败: {e}")
-            # 不删除文件，继续使用
 
-        # 返回成功响应
-        # 🔥 关键：返回相对路径，不是绝对路径
         web_path = f"/static/uploads/videos/{unique_name}"
 
         return jsonify({
@@ -709,8 +772,8 @@ def api_upload_video():
             'message': '✅ 视频上传成功',
             'filename': unique_name,
             'original_name': original_name,
-            'path': file_path,  # 服务器上的绝对路径
-            'web_path': web_path,  # Web访问路径
+            'path': file_path,
+            'web_path': web_path,
             'url': web_path,
             'size': f'{file_size_mb:.2f} MB',
             'size_bytes': file_size,
@@ -724,6 +787,31 @@ def api_upload_video():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# =========================
+# API: Chat text
+# =========================
+@app.route('/api/chat/text', methods=['POST'])
+def api_chat_text():
+    data = request.get_json(force=True) or {}
+    text = (data.get("text") or "").strip()
+    system_prompt = data.get("system_prompt")
+    max_new_tokens = int(data.get("max_new_tokens") or 256)
+
+    if not text:
+        return jsonify({"success": False, "error": "text 不能为空"}), 400
+
+    max_new_tokens = max(1, min(max_new_tokens, 1024))
+
+    try:
+        result = reply_text(text, system_prompt=system_prompt, max_new_tokens=max_new_tokens)
+        return jsonify({"success": True, "assistant_text": result["assistant_text"]})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# =========================
+# API: Upload audio
+# =========================
 @app.route('/api/upload/audio', methods=['POST'])
 def api_upload_audio():
     """上传音频文件"""
@@ -736,17 +824,14 @@ def api_upload_audio():
         if audio_file.filename == '':
             return jsonify({'success': False, 'error': '没有选择文件'}), 400
 
-        # 创建上传目录
         upload_dir = 'static/uploads/audios'
         os.makedirs(upload_dir, exist_ok=True)
 
-        # 生成安全的文件名
         original_name = audio_file.filename
         safe_name = secure_filename(original_name)
         unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
         file_path = os.path.join(upload_dir, unique_name)
 
-        # 保存文件
         audio_file.save(file_path)
 
         return jsonify({
@@ -760,160 +845,9 @@ def api_upload_audio():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# ========== 新增的训练状态API ==========
-@app.route('/api/train/status/<task_id>', methods=['GET'])
-def api_train_status(task_id):
-    """获取训练任务状态 - 修复版本"""
-    try:
-        # 获取任务信息
-        task = training_manager.get_task(task_id)
-
-        if not task:
-            return jsonify({
-                'success': False,
-                'error': f'任务 {task_id} 不存在',
-                'available_tasks': [t['id'] for t in training_manager.list_tasks()],
-                'message': '请启动一个新的训练任务'
-            }), 404
-
-        # 构建响应
-        response = {
-            'success': True,
-            'task': {
-                'id': task['id'],
-                'status': task['status'],
-                'progress': task['progress'],
-                'start_time': task.get('start_time'),
-                'end_time': task.get('end_time'),
-                'model_path': task.get('model_path'),
-                'model_name': task.get('config', {}).get('model_name', '未命名'),
-                'error': task.get('error')
-            }
-        }
-
-        # 添加最近日志（可选）
-        if task.get('logs'):
-            response['task']['recent_logs'] = task['logs'][-10:]
-
-        return jsonify(response)
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'task_id': task_id
-        }), 500
-
-
-@app.route('/api/train/latest', methods=['GET'])
-def get_latest_task():
-    """获取最新的训练任务"""
-    tasks = training_manager.list_tasks()
-    if tasks:
-        latest = max(tasks, key=lambda x: x.get('start_time', ''))
-        return jsonify({
-            'success': True,
-            'task_id': latest['id'],
-            'status': latest['status'],
-            'progress': latest.get('progress', 0)
-        })
-    return jsonify({'success': False, 'message': '没有训练任务'})
-
-
-@app.route('/api/train/start', methods=['POST'])
-def api_train_start():
-    """开始训练任务 - 新增的独立API"""
-    try:
-        data = request.get_json()
-
-        # 验证必要参数
-        if not data.get('video_path'):
-            return jsonify({
-                'success': False,
-                'error': '视频路径不能为空'
-            }), 400
-
-        # 准备配置
-        config = {
-            'video_path': data['video_path'],
-            'model_name': data.get('model_name', f'model_{uuid.uuid4().hex[:6]}'),
-            'epochs': int(data.get('epochs', 50)),
-            'preprocess': data.get('preprocess', True),
-            'use_gpu': data.get('use_gpu', False),
-            'config_file': data.get('config_file', 'arguments/args.py'),
-            'advanced_config': data.get('advanced_config', {})
-        }
-
-        # 启动训练
-        task_id = training_manager.start_training(config)
-
-        return jsonify({
-            'success': True,
-            'task_id': task_id,
-            'message': '训练任务已启动',
-            'status_url': f'/api/train/status/{task_id}'
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/train/list', methods=['GET'])
-def api_train_list():
-    """获取所有训练任务列表 - 新增的独立API"""
-    try:
-        tasks = training_manager.list_tasks()
-        simplified_tasks = []
-
-        for task in tasks:
-            simplified_tasks.append({
-                'id': task['id'],
-                'status': task['status'],
-                'progress': task['progress'],
-                'start_time': task.get('start_time'),
-                'model_name': task.get('config', {}).get('model_name', '未命名'),
-                'video_source': task.get('config', {}).get('video_path', '未知')
-            })
-
-        return jsonify({
-            'success': True,
-            'tasks': simplified_tasks
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/train/stop/<task_id>', methods=['POST'])
-def api_train_stop(task_id):
-    """停止训练任务 - 新增的独立API"""
-    try:
-        success = training_manager.stop_training(task_id)
-
-        if success:
-            return jsonify({
-                'success': True,
-                'message': f'任务 {task_id} 已停止'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'任务 {task_id} 不存在或无法停止'
-            }), 404
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
+# =========================
+# API: Defaults config
+# =========================
 @app.route('/api/config/defaults', methods=['GET'])
 def api_config_defaults():
     """获取默认配置"""
@@ -976,6 +910,75 @@ def api_config_defaults():
     return jsonify({'success': True, 'configs': default_configs})
 
 
+# =========================
+# API: Chat avatar ✅
+# =========================
+# 1. 任务执行函数（后台运行）
+def background_avatar_task(job_id, user_text, system_prompt, max_new_tokens):
+    try:
+        # --- 原有的同步逻辑移到这里 ---
+        # 1) LLM
+        result = reply_text(user_text, system_prompt=system_prompt, max_new_tokens=max_new_tokens)
+        assistant_text = result["assistant_text"]
+        jobs[job_id]["assistant_text"] = assistant_text
+
+        # 2) TTS
+        wav_path = tts_to_wav(assistant_text)
+
+        # 3) EGSTalker 推理
+        with open(wav_path, "rb") as f:
+            files = {"audio": ("speech.wav", f, "audio/wav")}
+            r = requests.post(EGS_INFER_URL, files=files, timeout=1200)
+
+        if r.status_code == 200:
+            video_name = f"avatar_{job_id}.mp4"
+            video_path = os.path.join(GEN_VIDEO_DIR, video_name)
+            with open(video_path, "wb") as vf:
+                vf.write(r.content)
+
+            # 标记完成
+            jobs[job_id]["status"] = "completed"
+            jobs[job_id]["video_url"] = f"/static/generated_videos/{video_name}"
+        else:
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = "数字人渲染失败"
+
+    except Exception as e:
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = str(e)
+
+# 2. 修改后的提交接口
+@app.route('/api/chat/avatar', methods=['POST'])
+def api_chat_avatar():
+    data = request.get_json(force=True) or {}
+    user_text = (data.get("text") or "").strip()
+    system_prompt = data.get("system_prompt")
+    max_new_tokens = int(data.get("max_new_tokens") or 256)
+
+    job_id = uuid.uuid4().hex[:8]
+    jobs[job_id] = {"status": "processing", "video_url": None, "assistant_text": "思考中..."}
+
+    # 启动后台线程
+    thread = threading.Thread(
+        target=background_avatar_task,
+        args=(job_id, user_text, system_prompt, max_new_tokens)
+    )
+    thread.start()
+
+    return jsonify({"success": True, "job_id": job_id})
+
+# 3. 新增：状态查询接口
+@app.route('/api/chat/job_status/<job_id>', methods=['GET'])
+def get_job_status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"status": "not_found"}), 404
+    return jsonify(job)
+
+
+# =========================
+# API: Config save/list
+# =========================
 @app.route('/api/config/save', methods=['POST'])
 def api_config_save():
     """保存配置"""
@@ -1021,7 +1024,7 @@ def api_config_list():
                             'path': config_path,
                             'config': config_data
                         })
-                    except:
+                    except Exception:
                         continue
 
         return jsonify({'success': True, 'configs': configs})
@@ -1030,19 +1033,20 @@ def api_config_list():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# =========================
+# API: Models list
+# =========================
 @app.route('/api/models/list', methods=['GET'])
 def api_models_list():
     """获取模型列表"""
     try:
         models = []
 
-        # 检查output目录
         output_dir = 'output'
         if os.path.exists(output_dir):
             for model_name in os.listdir(output_dir):
                 model_path = os.path.join(output_dir, model_name)
                 if os.path.isdir(model_path):
-                    # 检查是否有训练完成标记
                     has_checkpoint = any(f.startswith('checkpoint_') for f in os.listdir(model_path))
                     has_config = any(f.endswith('_config.json') for f in os.listdir(model_path))
 
@@ -1055,7 +1059,6 @@ def api_models_list():
                             'has_config': has_config
                         })
 
-        # 如果没有模型，添加示例
         if not models:
             models.append({
                 'name': 'example_model',
@@ -1070,6 +1073,9 @@ def api_models_list():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# =========================
+# API: Inference generate (保持你原逻辑)
+# =========================
 @app.route('/api/inference/generate', methods=['POST'])
 def api_inference_generate():
     """生成推理视频"""
@@ -1083,7 +1089,6 @@ def api_inference_generate():
         if not model_path or not os.path.exists(model_path):
             return jsonify({'success': False, 'error': '模型路径无效'}), 400
 
-        # 保存音频
         audio_dir = 'static/uploads/audios'
         os.makedirs(audio_dir, exist_ok=True)
 
@@ -1091,14 +1096,12 @@ def api_inference_generate():
         audio_path = os.path.join(audio_dir, audio_filename)
         audio_file.save(audio_path)
 
-        # 模拟生成过程
         result_dir = 'result-video'
         os.makedirs(result_dir, exist_ok=True)
 
         result_filename = f"result_{uuid.uuid4().hex[:8]}.mp4"
         result_path = os.path.join(result_dir, result_filename)
 
-        # 创建模拟结果文件
         with open(result_path, 'wb') as f:
             f.write(b"Simulated video result")
 
@@ -1113,6 +1116,9 @@ def api_inference_generate():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# =========================
+# API: Health & Debug
+# =========================
 @app.route('/api/health', methods=['GET'])
 def api_health():
     """健康检查"""
@@ -1121,27 +1127,6 @@ def api_health():
         'timestamp': datetime.now().isoformat(),
         'working_directory': os.getcwd(),
         'python_version': sys.version
-    })
-
-
-@app.route('/debug/routes')
-def debug_routes():
-    """查看所有已注册的路由"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'rule': str(rule),
-            'methods': list(rule.methods)
-        })
-
-    # 检查是否有训练状态路由
-    has_train_status = any('/api/train/status/' in route['rule'] for route in routes)
-
-    return jsonify({
-        'has_train_status_api': has_train_status,
-        'total_routes': len(routes),
-        'routes': sorted(routes, key=lambda x: x['rule'])
     })
 
 
@@ -1162,32 +1147,14 @@ def api_debug_paths():
 
     upload_dir = 'static/uploads/videos'
     if os.path.exists(upload_dir):
-        paths_info['upload_dir_contents'] = os.listdir(upload_dir)[:10]  # 只显示前10个
+        paths_info['upload_dir_contents'] = os.listdir(upload_dir)[:10]
 
     return jsonify(paths_info)
 
 
-# ========== 路由查看器 ==========
-@app.route('/debug/all-routes')
-def show_all_routes():
-    """显示所有已注册的路由"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        if rule.endpoint != 'static':  # 过滤静态文件路由
-            routes.append({
-                'route': str(rule),
-                'endpoint': rule.endpoint,
-                'methods': list(rule.methods)
-            })
-
-    return jsonify({
-        'total_routes': len(routes),
-        'routes': sorted(routes, key=lambda x: x['route']),
-        'has_train_status': any('/api/train/status/' in r['route'] for r in routes)
-    })
-
-
-# ========== 静态文件路由 ==========
+# =========================
+# Static routes（保持你原写法）
+# =========================
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_file(os.path.join('static', filename))
@@ -1198,23 +1165,34 @@ def serve_result_video(filename):
     return send_file(os.path.join('result-video', filename))
 
 
-# ========== 应用启动 ==========
+# =========================
+# App start
+# =========================
 if __name__ == '__main__':
     print("=" * 60)
     print("🚀 EGS-Talker 模型训练平台")
     print("=" * 60)
     print(f"📁 工作目录: {os.getcwd()}")
-    print(f"🌐 服务地址: http://localhost:5001")
+    print(f"🌐 服务地址: https://localhost:5001")
     print(f"📊 上传目录: {os.path.join(os.getcwd(), 'static/uploads/videos')}")
     print("=" * 60)
 
-    # 检查必要目录
     create_directories()
 
-    # 运行应用
+    cert_path = os.path.expanduser("~/certs/cert.pem")
+    key_path = os.path.expanduser("~/certs/key.pem")
+
+    ssl_args = {}
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        ssl_args['ssl_context'] = (cert_path, key_path)
+        print("🔐 已启用 HTTPS 模式")
+    else:
+        print("⚠️ 未找到证书文件，将以 HTTP 模式启动 (仅限本地测试)")
+
     app.run(
-        debug=True,
-        host='0.0.0.0',
+        debug=False,
+        host="0.0.0.0",
         port=5001,
-        threaded=True
+        threaded=True,
+        **ssl_args
     )
