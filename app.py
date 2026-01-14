@@ -1,4 +1,4 @@
-# app.py - 完整修复版本（含 /api/chat/avatar + edge-tts -> wav -> EGSTalker）
+# app.py
 from flask import Flask, render_template, request, jsonify, send_file, session
 import os
 import sys
@@ -1196,3 +1196,4 @@ if __name__ == '__main__':
         threaded=True,
         **ssl_args
     )
+
