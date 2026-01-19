@@ -3,7 +3,7 @@
 # GRAPHDECO research group, https://team.inria.fr/graphdeco
 # All rights reserved.
 #
-# This software is free for non-commercial, research and evaluation use 
+# This software is free for non-commercial, research and evaluation use
 # under the terms of the LICENSE.md file.
 #
 # For inquiries contact  george.drettakis@inria.fr
@@ -34,7 +34,7 @@ def multithread_write(image_list, path):
             return count, True
         except:
             return count, False
-        
+
     tasks = []
     for index, image in enumerate(image_list):
         tasks.append(executor.submit(write_image, image, index, path))
@@ -42,7 +42,7 @@ def multithread_write(image_list, path):
     for index, status in enumerate(tasks):
         if status == False:
             write_image(image_list[index], index, path)
-    
+
 to8b = lambda x : (255*np.clip(x.cpu().numpy(),0,1)).astype(np.uint8)
 
 
@@ -50,57 +50,57 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
     gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt")
     inf_audio_dir = audio_dir
-    
+
     makedirs(render_path, exist_ok=True)
     if name != 'custom':
         makedirs(gts_path, exist_ok=True)
-    
+
     viewpoint_stack = scene
-    
+
     # Handle subsetting
     total_frames = len(viewpoint_stack.dataset) if hasattr(viewpoint_stack, 'dataset') else len(viewpoint_stack)
     if end_frame == -1 or end_frame > total_frames:
         end_frame = total_frames
-    
+
     if start_frame > 0 or end_frame < total_frames:
         print(f"Rendering subset: {start_frame} to {end_frame}")
         viewpoint_stack = torch.utils.data.Subset(viewpoint_stack, range(start_frame, end_frame))
-        
+
     viewpoint_stack_loader = DataLoader(viewpoint_stack, batch_size=batch_size,shuffle=False,num_workers=0,collate_fn=list)
-    
+
     loader = iter(viewpoint_stack_loader)
-    
+
     if name == "train" :
         process_until = 1000
         print(" -------------------------------------------------")
         print("        train set rendering  :   {} frames   ".format(process_until))
         print(" -------------------------------------------------")
     else:
-        process_until = len(viewpoint_stack) 
+        process_until = len(viewpoint_stack)
         print(" -------------------------------------------------")
         print("        test set rendering  :   {}  frames  ".format(process_until))
-        print(" -------------------------------------------------") 
+        print(" -------------------------------------------------")
     print("point nums:",gaussians._xyz.shape[0])
-    
+
     iterations = process_until // batch_size
     if process_until % batch_size != 0:
         iterations += 1
     total_time = 0
-    
+
     # Initialize video writers
     fps = 25
-    
+
     # Append range to filename if subsetting
     suffix = ""
     if start_frame > 0 or end_frame < total_frames:
         suffix = f"_{start_frame}_{end_frame}"
-        
+
     render_video_path = os.path.join(render_path, f"renders{suffix}.mp4")
     gt_video_path = os.path.join(gts_path, f"gt{suffix}.mp4") if name != 'custom' else None
-    
+
     writer_renders = None
     writer_gt = None
-    
+
     import gc
 
     #render image
@@ -112,27 +112,27 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
             break
 
         try:
-            output = render_from_batch(viewpoint_cams, gaussians, pipeline, 
+            output = render_from_batch(viewpoint_cams, gaussians, pipeline,
                                 random_color= False, stage='fine',
                                 batch_size=batch_size, visualize_attention=False, only_infer=True)
         except Exception as e:
             print(f"Rendering failed at batch {idx}: {e}")
             break
         total_time += output["inference_time"]
-        
+
         # Process rendered images immediately to save memory
         rendered_batch = output["rendered_image_tensor"].cpu()
         gt_batch = output["gt_tensor"].cpu()
-        
+
         rendered_imgs = tensor_to_image(rendered_batch)
         gt_imgs = tensor_to_image(gt_batch)
-        
+
         # Handle single image case
         if len(rendered_imgs.shape) == 3:
             rendered_imgs = rendered_imgs[None, ...]
         if len(gt_imgs.shape) == 3:
             gt_imgs = gt_imgs[None, ...]
-            
+
         # Crop to even dimensions
         h, w = rendered_imgs.shape[1:3]
         new_h = h - (h % 2)
@@ -140,7 +140,7 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
         if new_h != h or new_w != w:
             rendered_imgs = rendered_imgs[:, :new_h, :new_w, :]
             gt_imgs = gt_imgs[:, :new_h, :new_w, :]
-            
+
         rendered_imgs = np.ascontiguousarray(rendered_imgs)
         gt_imgs = np.ascontiguousarray(gt_imgs)
 
@@ -153,11 +153,11 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
 
         for img in rendered_imgs:
             writer_renders.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-            
+
         if writer_gt:
             for img in gt_imgs:
                 writer_gt.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-        
+
         # Explicitly delete tensors to free memory
         del output
         del rendered_batch
@@ -166,7 +166,7 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
         del gt_imgs
         del viewpoint_cams
         torch.cuda.empty_cache()
-        
+
         if idx % 100 == 0:
             gc.collect()
 
@@ -174,11 +174,11 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
         writer_renders.release()
     if writer_gt:
         writer_gt.release()
-    
+
     # Skip attention rendering loop as it consumes time and we don't save it
     # loader = iter(viewpoint_stack_loader)
     # for idx in range(iterations): ...
-    
+
     # Only run ffmpeg if we processed the full video (or handle merging later)
     if start_frame == 0 and end_frame == total_frames:
         if name != 'custom':
@@ -188,24 +188,24 @@ def render_set(model_path, name, iteration, scene, gaussians, pipeline, audio_di
             os.system(cmd)
         cmd = f'ffmpeg -loglevel quiet -y -i {render_path}/renders.mp4 -i {inf_audio_dir} -c:v copy -c:a aac {render_path}/{model_path.split("/")[-2]}_{name}_{iteration}iter_renders.mov'
         os.system(cmd)
-        
+
         if name != 'custom':
             os.remove(f"{gts_path}/gt.mp4")
         os.remove(f"{render_path}/renders.mp4")
     else:
         print(f"Partial render complete. Video saved to {render_video_path}")
-    
-    
+
+
 def render_sets(dataset : ModelParams, hyperparam, iteration : int, pipeline : PipelineParams, args):
     skip_train, skip_test, skip_video, batch_size= args.skip_train, args.skip_test, args.skip_video, args.batch
-    
+
     with torch.no_grad():
         data_dir = dataset.source_path
         gaussians = GaussianModel(dataset.sh_degree, hyperparam)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False, custom_aud=args.custom_aud)
-        
+
         gaussians.eval()
-        
+
         if args.custom_aud != '':
             audio_dir = os.path.join(data_dir, args.custom_wav)
             render_set(dataset.model_path, "custom", scene.loaded_iter, scene.getCustomCameras(), gaussians, pipeline, audio_dir, batch_size, args.start_frame, args.end_frame)
@@ -226,7 +226,7 @@ def write_frames_to_video(frames, path, codec='mp4v', fps=25, use_imageio=False)
         new_w = w - (w % 2)
         if new_h != h or new_w != w:
             frames = frames[:, :new_h, :new_w, :]
-        
+
         # Ensure contiguous memory layout to fix swscaler warning
         frames = np.ascontiguousarray(frames)
 
@@ -245,7 +245,7 @@ def tensor_to_image(tensor, normalize=True):
         image = tensor.detach().cpu().numpy().squeeze()
     else:
         image = tensor
-        
+
     if normalize:
         image = 255 * image
         image = image.clip(0, 255).astype(np.uint8)
@@ -254,9 +254,9 @@ def tensor_to_image(tensor, normalize=True):
         image = image.transpose(1, 2, 0)
     elif len(image.shape) == 4:
         image = image.transpose(0, 2, 3, 1)
-    return image        
+    return image
 
-            
+
 if __name__ == "__main__":
     #mp.set_start_method('spawn', force=True)
     # Set up command line argument parser
