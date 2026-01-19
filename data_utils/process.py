@@ -3,10 +3,9 @@ import glob
 import tqdm
 import json
 import argparse
-import cv2
 import numpy as np
 import subprocess
-
+import sys
 
 def get_duration(file_path):
     result = subprocess.run(
@@ -18,26 +17,26 @@ def get_duration(file_path):
     return duration
 
 def extract_audio(path, out_path, sample_rate=16000):
-    
+
     print(f'[INFO] ===== extract audio from {path} to {out_path} =====')
     cmd = f'ffmpeg -i {path} -f wav -ar {sample_rate} {out_path}'
     os.system(cmd)
-    
+
     total_duration = get_duration(path)
     train_duration = total_duration * 10 / 11
     test_duration = total_duration / 11
-    
+
     directory = os.path.dirname(out_path)
     train_path = os.path.join(directory, 'aud_train.wav')
     test_path = os.path.join(directory, 'aud_novel.wav')
-    
+
     train_cmd = f'ffmpeg -i "{path}" -f wav -ar {sample_rate} -t {train_duration} {train_path}'
     os.system(train_cmd)
 
     start_time = total_duration - test_duration
     test_cmd = f'ffmpeg -i "{path}" -f wav -ar {sample_rate} -ss {start_time} -t {test_duration} {test_path}'
     os.system(test_cmd)
-    
+
     print(f'[INFO] ===== extracted audio =====')
 
 
@@ -45,9 +44,9 @@ def extract_audio_features(path, mode='wav2vec'):
 
     print(f'[INFO] ===== extract audio labels for {path} use {mode} =====')
     if mode == 'wav2vec':
-        cmd = f'python nerf/asr.py --wav {path} --save_feats'
+        cmd = f'{sys.executable} nerf/asr.py --wav {path} --save_feats'
     else: # deepspeech
-        cmd = f'python data_utils/deepspeech_features/extract_ds_features.py --input {path}'
+        cmd = f'{sys.executable} data_utils/deepspeech_features/extract_ds_features.py --input {path}'
     os.system(cmd)
     import shutil
     src = path.replace('.wav', '.npy')
@@ -62,7 +61,7 @@ def extract_audio_features(path, mode='wav2vec'):
 
 
 def extract_images(path, out_path, fps=25):
-
+    import cv2
     print(f'[INFO] ===== extract images from {path} to {out_path} =====')
     cmd = f'ffmpeg -i {path} -vf fps={fps} -qmin 1 -q:v 1 -start_number 0 {os.path.join(out_path, "%d.jpg")}'
     os.system(cmd)
@@ -72,13 +71,13 @@ def extract_images(path, out_path, fps=25):
 def extract_semantics(ori_imgs_dir, parsing_dir):
 
     print(f'[INFO] ===== extract semantics from {ori_imgs_dir} to {parsing_dir} =====')
-    cmd = f'python data_utils/face_parsing/test.py --respath={parsing_dir} --imgpath={ori_imgs_dir}'
+    cmd = f'{sys.executable} data_utils/face_parsing/test.py --respath={parsing_dir} --imgpath={ori_imgs_dir}'
     os.system(cmd)
     print(f'[INFO] ===== extracted semantics =====')
 
 
 def extract_landmarks(ori_imgs_dir):
-
+    import cv2
     print(f'[INFO] ===== extract face landmarks from {ori_imgs_dir} =====')
 
     import face_alignment
@@ -97,15 +96,14 @@ def extract_landmarks(ori_imgs_dir):
     del fa
     print(f'[INFO] ===== extracted face landmarks =====')
 
-
 def extract_background(base_dir, ori_imgs_dir):
-    
+    import cv2
     print(f'[INFO] ===== extract background image from {ori_imgs_dir} =====')
 
     from sklearn.neighbors import NearestNeighbors
 
     image_paths = glob.glob(os.path.join(ori_imgs_dir, '*.jpg'))
-    # only use 1/20 image_paths 
+    # only use 1/20 image_paths
     image_paths = image_paths[::20]
     # read one image to get H/W
     tmp_image = cv2.imread(image_paths[0], cv2.IMREAD_UNCHANGED) # [H, W, 3]
@@ -156,14 +154,14 @@ def extract_background(base_dir, ori_imgs_dir):
 
 
 def extract_torso_and_gt(base_dir, ori_imgs_dir):
-
+    import cv2
     print(f'[INFO] ===== extract torso and gt images for {base_dir} =====')
 
     from scipy.ndimage import binary_erosion, binary_dilation
 
     # load bg
     bg_image = cv2.imread(os.path.join(base_dir, 'bc.jpg'), cv2.IMREAD_UNCHANGED)
-    
+
     image_paths = glob.glob(os.path.join(ori_imgs_dir, '*.jpg'))
 
     for image_path in tqdm.tqdm(image_paths):
@@ -186,11 +184,11 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
         torso_image = gt_image.copy() # rgb
         torso_image[head_part] = bg_image[head_part]
         torso_alpha = 255 * np.ones((gt_image.shape[0], gt_image.shape[1], 1), dtype=np.uint8) # alpha
-        
+
         # torso part "vertical" in-painting...
         L = 8 + 1
         torso_coords = np.stack(np.nonzero(torso_part), axis=-1) # [M, 2]
-        # lexsort: sort 2D coords first by y then by x, 
+        # lexsort: sort 2D coords first by y then by x,
         # ref: https://stackoverflow.com/questions/2706605/sorting-a-2d-numpy-array-by-multiple-axes
         inds = np.lexsort((torso_coords[:, 0], torso_coords[:, 1]))
         torso_coords = torso_coords[inds]
@@ -199,7 +197,7 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
         top_torso_coords = torso_coords[uid] # [m, 2]
         # only keep top-is-head pixels
         top_torso_coords_up = top_torso_coords.copy() - np.array([1, 0])
-        mask = head_part[tuple(top_torso_coords_up.T)] 
+        mask = head_part[tuple(top_torso_coords_up.T)]
         if mask.any():
             top_torso_coords = top_torso_coords[mask]
             # get the color
@@ -219,7 +217,7 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
             inpaint_torso_mask[tuple(inpaint_torso_coords.T)] = True
         else:
             inpaint_torso_mask = None
-            
+
 
         # neck part "vertical" in-painting...
         push_down = 4
@@ -228,7 +226,7 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
         neck_part = binary_dilation(neck_part, structure=np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], dtype=bool), iterations=3)
 
         neck_coords = np.stack(np.nonzero(neck_part), axis=-1) # [M, 2]
-        # lexsort: sort 2D coords first by y then by x, 
+        # lexsort: sort 2D coords first by y then by x,
         # ref: https://stackoverflow.com/questions/2706605/sorting-a-2d-numpy-array-by-multiple-axes
         inds = np.lexsort((neck_coords[:, 0], neck_coords[:, 1]))
         neck_coords = neck_coords[inds]
@@ -237,8 +235,8 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
         top_neck_coords = neck_coords[uid] # [m, 2]
         # only keep top-is-head pixels
         top_neck_coords_up = top_neck_coords.copy() - np.array([1, 0])
-        mask = head_part[tuple(top_neck_coords_up.T)] 
-        
+        mask = head_part[tuple(top_neck_coords_up.T)]
+
         top_neck_coords = top_neck_coords[mask]
         # push these top down for 4 pixels to make the neck inpainting more natural...
         offset_down = np.minimum(ucnt[mask] - 1, push_down)
@@ -281,16 +279,15 @@ def extract_torso_and_gt(base_dir, ori_imgs_dir):
 
 
 def face_tracking(ori_imgs_dir):
-
+    import cv2
     print(f'[INFO] ===== perform face tracking =====')
 
     image_paths = glob.glob(os.path.join(ori_imgs_dir, '*.jpg'))
-    
+
     # read one image to get H/W
     tmp_image = cv2.imread(image_paths[0], cv2.IMREAD_UNCHANGED) # [H, W, 3]
     h, w = tmp_image.shape[:2]
-
-    cmd = f'python data_utils/face_tracking/face_tracker.py --path={ori_imgs_dir} --img_h={h} --img_w={w} --frame_num={len(image_paths)}'
+    cmd = f'{sys.executable} data_utils/face_tracking/face_tracker.py --path={ori_imgs_dir} --img_h={h} --img_w={w} --frame_num={len(image_paths)}'
     #python data_utils/face_tracking/face_tracker.py --path=data/frozenobama/ori_imgs --img_h=450 --img_w=450 --frame_num=7996
     # import pdb; pdb.set_trace()
 
@@ -303,9 +300,10 @@ def save_transforms(base_dir, ori_imgs_dir):
     print(f'[INFO] ===== save transforms =====')
 
     import torch
+    import cv2
 
     image_paths = glob.glob(os.path.join(ori_imgs_dir, '*.jpg'))
-    
+
     # read one image to get H/W
     tmp_image = cv2.imread(image_paths[0], cv2.IMREAD_UNCHANGED) # [H, W, 3]
     h, w = tmp_image.shape[:2]
@@ -382,6 +380,14 @@ def save_transforms(base_dir, ori_imgs_dir):
         with open(os.path.join(base_dir, 'transforms_' + save_id + '.json'), 'w') as fp:
             json.dump(transform_dict, fp, indent=2, separators=(',', ': '))
 
+    import pandas as pd
+    num_frames = len(image_paths)
+    au_path = os.path.join(base_dir, 'au.csv')
+    if not os.path.exists(au_path):
+        df = pd.DataFrame({'frame': range(num_frames), 'AU45_r': [0]*num_frames})
+        df.to_csv(au_path, index=False)
+        print(f'[INFO] ===== auto-generated dummy au.csv with {num_frames} frames =====')
+
     print(f'[INFO] ===== finished saving transforms =====')
 
 
@@ -394,7 +400,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     base_dir = os.path.dirname(opt.path)
-    
+
     wav_path = os.path.join(base_dir, 'aud.wav')
     ori_imgs_dir = os.path.join(base_dir, 'ori_imgs')
     parsing_dir = os.path.join(base_dir, 'parsing')
@@ -442,4 +448,3 @@ if __name__ == '__main__':
     # save transforms.json
     if opt.task == -1 or opt.task == 9:
         save_transforms(base_dir, ori_imgs_dir)
-
