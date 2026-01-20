@@ -1,8 +1,0 @@
-LICENSE
-README.md
-setup.py
-ikan.egg-info/PKG-INFO
-ikan.egg-info/SOURCES.txt
-ikan.egg-info/dependency_links.txt
-ikan.egg-info/requires.txt
-ikan.egg-info/top_level.txt
